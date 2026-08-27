@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
-    <title>智能饮食规划器 V46</title>
+    <title>智能饮食规划器 V47</title>
     <!-- SheetJS CDN — 用于XLSX多sheet导入导出 -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <!-- Supabase JS SDK v2 -->
@@ -607,7 +607,7 @@
 </div>
 
 <div class="toast" id="toast"></div>
-<div style="position:fixed;bottom:4px;right:8px;font-size:10px;color:#ccc;pointer-events:none;">V46</div>
+<div style="position:fixed;bottom:4px;right:8px;font-size:10px;color:#ccc;pointer-events:none;">V47</div>
 
 <script>
     // ============================================================
@@ -2491,12 +2491,25 @@
                     if (isOnlineMode && currentUser) {
                         const uid = currentUser.id;
                         const profileId = currentUserId;
-                        if (dailyData[profileId]) await syncLocalMealsToCloud(uid, profileId, dailyData[profileId]);
-                        if (weightRecords[profileId]) await syncLocalWeightsToCloud(uid, weightRecords[profileId]);
-                        if (customFoods[profileId]) await syncLocalFoodsToCloud(uid, customFoods[profileId]);
-                        if (users.length > 0) await saveProfileToCloud(users[0]);
+                        // 先清除云端旧数据（防止重复导入产生多条）
+                        if (dailyData[profileId]) {
+                            await supabaseClient.from('daily_data').delete().eq('user_id', uid);
+                            await syncLocalMealsToCloud(uid, profileId, dailyData[profileId]);
+                        }
+                        if (weightRecords[profileId]) {
+                            await supabaseClient.from('weight_records').delete().eq('user_id', uid);
+                            await syncLocalWeightsToCloud(uid, weightRecords[profileId]);
+                        }
+                        if (customFoods[profileId]) {
+                            await supabaseClient.from('custom_foods').delete().eq('user_id', uid);
+                            await syncLocalFoodsToCloud(uid, customFoods[profileId]);
+                        }
+                        // 只 upsert 当前活跃用户档案，不重复创建
+                        if (users.length > 0 && currentUserId) {
+                            await saveProfileToCloud(users.find(u => u.id === currentUserId) || users[0]);
+                        }
                     }
-                    renderUserDropdown(document.getElementById('userSearchInput').value, false);
+                    renderUserDropdown('', false);
                     renderUserInfo(); renderAdvice(); renderMeals(); renderWeightChart(); renderHistory();
                     showToast(`✅ 导入完成: ${importedUsers}用户 / ${importedDiet}饮食 / ${importedWeight}体重 / ${importedFoods}食材`);
                 } catch (err) { showToast('⚠️ 导入失败: ' + err.message); }
@@ -2513,27 +2526,35 @@
     function switchUser(id) {
         if (users.find(u => u.id === id)) {
             currentUserId = id; saveAll();
-            renderUserDropdown(document.getElementById('userSearchInput').value, false);
+            // 清空搜索框，显示全部用户
+            const searchInput = document.getElementById('userSearchInput');
+            if (searchInput) searchInput.value = '';
+            renderUserDropdown('', false);
             renderUserInfo(); renderAdvice(); renderMeals(); renderWeightChart(); renderHistory();
             showToast('已切换到 ' + (users.find(u => u.id === id)?.name || '用户'));
         }
     }
     async function deleteUser(id) {
         if (!confirm('确定删除该用户吗？所有关联的饮食、体重记录将一并删除。')) return;
-        // 云端删除
-        if (isOnlineMode && currentUser && supabaseClient) {
+        // 云端删除：用被删除用户的 profile id，而非 currentUser（auth user）
+        if (isOnlineMode && supabaseClient) {
             try {
+                // 删除该 auth user 下的所有关联数据
                 await supabaseClient.from('daily_data').delete().eq('user_id', currentUser.id);
                 await supabaseClient.from('weight_records').delete().eq('user_id', currentUser.id);
                 await supabaseClient.from('custom_foods').delete().eq('user_id', currentUser.id);
                 await supabaseClient.from('profiles').delete().eq('id', id);
+                console.log('☁️ 云端删除完成, profile id:', id);
             } catch (e) { console.error('云端删除失败:', e); }
         }
         users = users.filter(u => u.id !== id);
         delete dailyData[id]; delete weightRecords[id]; delete customFoods[id];
         currentUserId = users.length > 0 ? users[0].id : null;
         saveAll();
-        renderUserDropdown(document.getElementById('userSearchInput').value, false);
+        // 清空搜索框，确保下拉列表显示全部剩余用户
+        const searchInput = document.getElementById('userSearchInput');
+        if (searchInput) searchInput.value = '';
+        renderUserDropdown('', false);
         renderUserInfo(); renderAdvice(); renderMeals(); renderWeightChart(); renderHistory();
         showToast('已删除用户');
     }
@@ -2727,7 +2748,7 @@
             showToast('✅ 已创建');
         }
         closeUserModal(); saveAll();
-        renderUserDropdown(document.getElementById('userSearchInput').value, false);
+        renderUserDropdown('', false);
         renderUserInfo(); renderAdvice(); renderMeals(); renderWeightChart(); renderHistory();
     }
 
@@ -2810,7 +2831,7 @@
                     // 再从云端加载
                     await loadFromCloud();
                     showMainApp();
-                    console.log('🥗 智能饮食规划器 V46 已加载（云端模式）');
+                    console.log('🥗 智能饮食规划器 V47 已加载（云端模式）');
                     return;
                 }
             } catch (e) {
@@ -2820,7 +2841,7 @@
         // 未登录，显示登录表单，隐藏 loading
         document.getElementById('authInitLoading').style.display = 'none';
         document.getElementById('authFormBox').style.display = 'block';
-        console.log('🥗 智能饮食规划器 V46 已加载（待登录）');
+        console.log('🥗 智能饮食规划器 V47 已加载（待登录）');
     });
 
     function bindAllEvents() {
@@ -2907,7 +2928,7 @@
         let resizeTimer;
         window.addEventListener('resize', function() { clearTimeout(resizeTimer); resizeTimer = setTimeout(renderWeightChart, 200); });
 
-        console.log('🥗 智能饮食规划器 V46 事件绑定完成');
+        console.log('🥗 智能饮食规划器 V47 事件绑定完成');
     }
 
     // 全局错误捕获
