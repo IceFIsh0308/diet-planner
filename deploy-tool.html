@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>🚀 GitHub Pages 部署工具</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,-apple-system,sans-serif}
+body{background:#F5F7FA;color:#1A1A2E;padding:16px;min-height:100vh}
+.header{text-align:center;margin-bottom:10px}
+.header h1{font-size:20px;color:#2D8B46}
+.header p{font-size:12px;color:#6B7280;margin-top:2px}
+.step-indicator{display:flex;align-items:center;gap:3px;margin-bottom:8px;flex-wrap:wrap;justify-content:center}
+.step{padding:2px 6px;border-radius:4px;font-size:9px;font-weight:600}
+.step-done{background:#D1FAE5;color:#059669}
+.step-current{background:#DBEAFE;color:#2563EB}
+.step-pending{background:#F3F4F6;color:#9CA3AF}
+.step-arrow{color:#D1D5DB;font-size:10px}
+.status-bar{display:flex;align-items:center;justify-content:center;gap:6px;padding:8px;border-radius:6px;font-size:12px;font-weight:600;margin-bottom:10px}
+.status-idle{background:#F3F4F6;color:#6B7280}
+.status-ok{background:#D1FAE5;color:#059669}
+.status-err{background:#FEE2E2;color:#DC2626}
+.status-warn{background:#FEF3C7;color:#D97706}
+.status-run{background:#DBEAFE;color:#2563EB}
+.spinner{display:inline-block;width:12px;height:12px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.layout{display:grid;grid-template-columns:280px 1fr;gap:12px;max-width:1000px;margin:0 auto;align-items:start}
+.card{background:#fff;border-radius:10px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,0.06)}
+.card-title{font-size:13px;font-weight:600;margin-bottom:8px;color:#374151}
+input,button{font-family:inherit}
+input[type=text],input[type=password]{width:100%;padding:6px 8px;border:1.5px solid #E5E7EB;border-radius:5px;font-size:12px}
+label{display:block;font-size:11px;color:#6B7280;margin:4px 0 2px}
+.hint{font-size:10px;color:#9CA3AF;margin-top:3px}
+.token-section{background:#FEF3C7;border-radius:8px;padding:10px;margin-bottom:10px}
+.token-section label{color:#92400E}
+.token-section a{color:#92400E;font-size:10px}
+.token-ok{color:#059669;font-size:11px;margin-top:3px;display:none}
+.token-ok.show{display:block}
+.row-block{background:#fff;border-radius:10px;padding:12px;box-shadow:0 1px 4px rgba(0,0,0,0.06);margin-bottom:8px}
+.file-drop{border:2px dashed #D1D5DB;border-radius:6px;padding:8px;text-align:center;cursor:pointer;transition:all .2s}
+.file-drop:hover{border-color:#2D8B46;background:#F0FDF4}
+.file-drop.dragover{border-color:#2D8B46;background:#E8F5E9}
+.file-drop p{color:#6B7280;font-size:11px;margin:1px 0}
+.file-info{padding:6px 8px;background:#F9FAFB;border-radius:6px;font-size:11px;display:none;margin-top:6px}
+.file-info.show{display:block}
+.file-info .row{display:flex;justify-content:space-between;margin:2px 0}
+.file-info .label{color:#6B7280}
+.file-info .value{font-weight:600}
+.checks{margin-top:6px;display:grid;grid-template-columns:1fr 1fr;gap:4px 12px}
+.check-item{display:flex;align-items:center;gap:6px;padding:3px 0;font-size:11px}
+.check-item .icon{width:16px;text-align:center}
+.check-ok{color:#2D8B46}.check-fail{color:#DC2626}.check-pending{color:#9CA3AF}
+.btn{padding:8px 16px;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s}
+.btn-primary{background:#2D8B46;color:#fff}
+.btn-primary:hover{background:#246B38}
+.btn-primary:disabled{background:#D1D5DB;cursor:not-allowed}
+.btn-secondary{background:#F3F4F6;color:#374151}
+.btn-secondary:hover{background:#E5E7EB}
+.actions{display:flex;gap:8px;margin-top:8px}
+.actions .btn{flex:1}
+.log{background:#1F2937;color:#D1D5DB;border-radius:6px;padding:8px;font-size:10px;font-family:'SF Mono',Monaco,monospace;max-height:160px;overflow-y:auto;margin-top:8px;display:none}
+.log.show{display:block}
+.log .line{margin:1px 0;white-space:pre-wrap}
+.log-ok{color:#4ADE80}.log-warn{color:#FBBF24}.log-err{color:#F87171}.log-info{color:#60A5FA}
+</style>
+</head>
+<body>
+<div class="header"><h1>🚀 GitHub Pages 部署工具</h1><p>从零到上线，浏览器一键完成</p></div>
+<div class="step-indicator">
+<span class="step step-pending" id="step1">1.Token</span><span class="step-arrow">→</span>
+<span class="step step-pending" id="step2">2.配置</span><span class="step-arrow">→</span>
+<span class="step step-pending" id="step3">3.选文件</span><span class="step-arrow">→</span>
+<span class="step step-pending" id="step4">4.校验</span><span class="step-arrow">→</span>
+<span class="step step-pending" id="step5">5.部署</span>
+</div>
+<div id="statusBar" class="status-bar status-idle"><span>⏳ 请填写 Token 开始</span></div>
+<div class="layout">
+<div class="card">
+<div class="card-title">🔑 认证 & 配置</div>
+<div class="token-section">
+<label>GitHub Token</label>
+<input type="password" id="githubToken" placeholder="ghp_xxxxx" />
+<div class="hint"><a href="https://github.com/settings/tokens" target="_blank">生成地址</a> → 勾选 repo</div>
+<div class="token-ok" id="tokenOk">✅ 已保存</div>
+</div>
+<label>用户名</label><input type="text" id="cfgOwner" placeholder="GitHub 用户名" />
+<label>仓库名</label><input type="text" id="cfgRepo" placeholder="my-site" />
+<label>文件路径</label><input type="text" id="cfgPath" value="index.html" />
+<label>分支</label><input type="text" id="cfgBranch" value="main" />
+<label>Pages 地址</label><input type="text" id="cfgPages" placeholder="自动生成" />
+<div class="hint">仓库不存在自动创建</div>
+</div>
+<div>
+<div class="row-block">
+<div class="file-drop" id="fileDrop"><p style="font-size:14px">📁 点击选择或拖拽 HTML 文件到此处</p></div>
+<input type="file" id="fileInput" accept=".html" style="display:none" />
+<div class="file-info" id="fileInfo">
+<div class="row"><span class="label">文件名</span><span class="value" id="infoName">-</span></div>
+<div class="row"><span class="label">大小</span><span class="value" id="infoSize">-</span></div>
+<div class="row"><span class="label">行数</span><span class="value" id="infoLines">-</span></div>
+<div class="row"><span class="label">版本</span><span class="value" id="infoVersion">-</span></div>
+</div>
+</div>
+<div class="row-block">
+<div class="card-title">📝 部署说明</div>
+<input type="text" id="commitMsg" placeholder="本次更新说明" />
+<div class="actions">
+<button class="btn btn-secondary" onclick="resetAll()">重置</button>
+<button class="btn btn-primary" id="deployBtn" disabled onclick="deploy()">🚀 确认部署</button>
+</div>
+<div class="log" id="logBox"></div>
+</div>
+<div class="row-block">
+<div class="card-title">🔍 部署校验</div>
+<div class="checks" id="checks"><div style="font-size:11px;color:#9CA3AF;padding:8px;grid-column:1/-1">选择文件后自动校验</div></div>
+</div>
+</div>
+</div><script>
+const CK='github_pages_deploy_v2';
+function loadCfg(){try{return JSON.parse(localStorage.getItem(CK)||'{}')}catch{return{}}}
+function saveCfg(c){localStorage.setItem(CK,JSON.stringify(c))}
+const saved=loadCfg();
+if(saved.token){document.getElementById('githubToken').value=saved.token;document.getElementById('tokenOk').classList.add('show');markStep(1)}
+if(saved.owner)document.getElementById('cfgOwner').value=saved.owner;
+if(saved.repo)document.getElementById('cfgRepo').value=saved.repo;
+if(saved.path)document.getElementById('cfgPath').value=saved.path;
+if(saved.branch)document.getElementById('cfgBranch').value=saved.branch;
+if(saved.pages)document.getElementById('cfgPages').value=saved.pages;
+if(!saved.owner)document.getElementById('cfgOwner').value='IceFIsh0308';
+if(!saved.repo)document.getElementById('cfgRepo').value='diet-planner';
+if(!saved.path)document.getElementById('cfgPath').value='index.html';
+if(!saved.branch)document.getElementById('cfgBranch').value='main';
+let fileContent=null,fileName='',checksPassed=false;
+function markStep(n){for(let i=1;i<=5;i++){const el=document.getElementById('step'+i);if(i<n)el.className='step step-done';else if(i===n)el.className='step step-current';else el.className='step step-pending'}}
+function setStatus(c,t,sp){const b=document.getElementById('statusBar');b.className='status-bar '+c;b.innerHTML=(sp?'<span class="spinner"></span>':'')+'<span>'+t+'</span>'}
+function log(m,t){const b=document.getElementById('logBox');b.classList.add('show');const l=document.createElement('div');l.className='line log-'+(t||'info');l.textContent=m;b.appendChild(l);b.scrollTop=b.scrollHeight}
+function updatePagesUrl(){const o=document.getElementById('cfgOwner').value.trim(),r=document.getElementById('cfgRepo').value.trim();if(o&&r){const url='https://'+o.toLowerCase()+'.github.io/'+r+'/';const cur=document.getElementById('cfgPages').value;if(!cur||cur.startsWith('https://'))document.getElementById('cfgPages').value=url}}
+document.getElementById('cfgOwner').addEventListener('input',updatePagesUrl);
+document.getElementById('cfgRepo').addEventListener('input',updatePagesUrl);
+document.getElementById('githubToken').addEventListener('input',function(){if(this.value.trim().length>10){document.getElementById('tokenOk').classList.add('show');markStep(2)}});
+const fd=document.getElementById('fileDrop'),fi=document.getElementById('fileInput');
+fd.addEventListener('click',()=>fi.click());
+fd.addEventListener('dragover',e=>{e.preventDefault();fd.classList.add('dragover')});
+fd.addEventListener('dragleave',()=>fd.classList.remove('dragover'));
+fd.addEventListener('drop',e=>{e.preventDefault();fd.classList.remove('dragover');if(e.dataTransfer.files[0])handleFile(e.dataTransfer.files[0])});
+fi.addEventListener('change',e=>{if(e.target.files[0])handleFile(e.target.files[0])});
+function handleFile(f){
+  if(!f.name.endsWith('.html')){alert('请选择 HTML 文件');return}
+  fileName=f.name;fileContent=null;checksPassed=false;
+  document.getElementById('deployBtn').disabled=true;
+  document.getElementById('fileInfo').classList.add('show');
+  setStatus('status-warn','读取文件...');
+  const r=new FileReader();
+  r.onload=function(e){fileContent=e.target.result;
+    document.getElementById('infoName').textContent=f.name;
+    document.getElementById('infoSize').textContent=(f.size/1024).toFixed(1)+' KB';
+    document.getElementById('infoLines').textContent=fileContent.split('\n').length+' 行';
+    const vm=fileContent.match(/V(\d+)/);
+    document.getElementById('infoVersion').textContent=vm?'V'+vm[1]:'未检测到';
+    if(!document.getElementById('commitMsg').value)document.getElementById('commitMsg').value='部署 '+(vm?'V'+vm[1]:'');
+    markStep(3);runChecks(fileContent);
+  };
+  r.readAsText(f);
+}
+function runChecks(content){
+  const checks=[
+    {n:'HTML 结构',t:()=>content.includes('<!DOCTYPE html>')||content.includes('<html')},
+    {n:'包含 JS',t:()=>content.includes('<script')},
+    {n:'包含 CSS',t:()=>content.includes('<style')||content.includes('<link')},
+    {n:'HTML 闭合',t:()=>content.includes('</html>')||content.includes('</body>')},
+    {n:'JS 语法',t:()=>{const s=content.match(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)||[];let hasCode=false;for(const x of s){const m=x.match(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/);if(m&&m[1]&&m[1].trim().length>50){hasCode=true;try{new Function(m[1])}catch(e){return false}}}return hasCode||s.length>0}},
+  ];
+  if(content.includes('supabase')||content.includes('饮食规划')){
+    checks.push({n:'Supabase SDK',t:()=>content.includes('supabase-js')&&content.includes('supabase.createClient')});
+    checks.push({n:'云端同步',t:()=>content.includes('loadFromCloud')&&content.includes('saveAll')});
+    checks.push({n:'拖动同步',t:()=>content.includes('handleFoodDrop')});
+  }
+  const c=document.getElementById('checks');c.innerHTML='';let allPass=true;
+  checks.forEach((ck,i)=>{
+    const el=document.createElement('div');el.className='check-item check-pending';
+    el.innerHTML='<span class="icon">⏳</span><span>'+ck.n+'</span>';c.appendChild(el);
+    setTimeout(()=>{
+      const p=ck.t();el.className='check-item '+(p?'check-ok':'check-fail');
+      el.querySelector('.icon').textContent=p?'✅':'❌';
+      if(!p)allPass=false;
+      if(i===checks.length-1){markStep(4);
+        if(allPass){setStatus('status-ok','✅ 校验通过');document.getElementById('deployBtn').disabled=false;checksPassed=true}
+        else{setStatus('status-err','❌ 校验失败');document.getElementById('deployBtn').disabled=true}
+      }
+    },40*(i+1))
+  });
+}
+async function deploy(){
+  if(!checksPassed||!fileContent)return;
+  const token=document.getElementById('githubToken').value.trim();
+  const owner=document.getElementById('cfgOwner').value.trim();
+  const repo=document.getElementById('cfgRepo').value.trim();
+  const path=document.getElementById('cfgPath').value.trim()||'index.html';
+  const branch=document.getElementById('cfgBranch').value.trim()||'main';
+  const pagesUrl=document.getElementById('cfgPages').value.trim();
+  const msg=document.getElementById('commitMsg').value.trim()||'部署更新';
+  if(!token){alert('请填写 Token');return}
+  if(!owner||!repo){alert('请填写用户名和仓库名');return}
+  saveCfg({owner,repo,path,branch,token,pages:pagesUrl});
+  markStep(5);setStatus('status-run','🚀 部署中...',true);
+  document.getElementById('deployBtn').disabled=true;
+  document.getElementById('logBox').innerHTML='';
+  log('🚀 部署...','info');log('文件: '+fileName,'info');log('说明: '+msg,'info');
+  log('目标: '+owner+'/'+repo+'/'+path,'info');
+  const headers={'Authorization':'token '+token,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'};
+  try{
+    log('📡 检查仓库...','info');
+    let rr=await fetch('https://api.github.com/repos/'+owner+'/'+repo,{headers});
+    if(rr.status===404){
+      log('📦 创建仓库...','warn');
+      const cr=await fetch('https://api.github.com/user/repos',{method:'POST',headers,body:JSON.stringify({name:repo,auto_init:true,public:true})});
+      if(cr.status===201){log('✅ 仓库已创建','ok');await new Promise(r=>setTimeout(r,2000))}
+      else{const e=await cr.json();throw new Error('创建失败: '+e.message)}
+    }else if(rr.status===200){log('✅ 仓库已存在','ok')}
+    else{const e=await rr.json();throw new Error(e.message)}
+    log('📡 检查 Pages...','info');
+    const pr=await fetch('https://api.github.com/repos/'+owner+'/'+repo+'/pages',{headers});
+    if(pr.status===404){log('⚙️ 启用 Pages...','warn');
+      const er=await fetch('https://api.github.com/repos/'+owner+'/'+repo+'/pages',{method:'POST',headers,body:JSON.stringify({source:{branch,path:'/'}})});
+      if(er.status===201)log('✅ Pages 已启用','ok');
+    }else if(pr.status===200){log('✅ Pages 已启用','ok')}
+    const apiBase='https://api.github.com/repos/'+owner+'/'+repo+'/contents/'+encodeURIComponent(path);
+    log('📡 获取文件...','info');
+    let sha=null;const gr=await fetch(apiBase+'?ref='+branch,{headers});
+    if(gr.status===200){sha=(await gr.json()).sha;log('✅ 已有文件','ok')}
+    else if(gr.status===404){log('ℹ️ 新文件','warn')}
+    const b64=btoa(unescape(encodeURIComponent(fileContent)));
+    log('🚀 推送中...','info');
+    const pu=await fetch(apiBase,{method:'PUT',headers,body:JSON.stringify({message:msg,content:b64,branch,sha})});
+    const pd=await pu.json();
+    if(pu.status===200||pu.status===201){
+      log('✅ 推送成功！','ok');
+      const url=pagesUrl||('https://'+owner.toLowerCase()+'.github.io/'+repo+'/');
+      log('🌐 '+url,'ok');setStatus('status-ok','✅ 部署成功！');
+    }else{throw new Error(pd.message)}
+  }catch(e){
+    log('❌ '+e.message,'err');
+    if(e.message.includes('Bad credentials')){log('Token 无效','warn')}
+    setStatus('status-err','❌ 部署失败');
+    document.getElementById('deployBtn').disabled=false;
+  }
+}
+function resetAll(){
+  fileContent=null;fileName='';checksPassed=false;
+  document.getElementById('fileInput').value='';
+  document.getElementById('fileInfo').classList.remove('show');
+  document.getElementById('checks').innerHTML='<div style="font-size:11px;color:#9CA3AF;padding:8px;grid-column:1/-1">选择文件后自动校验</div>';
+  document.getElementById('deployBtn').disabled=true;
+  document.getElementById('logBox').innerHTML='';
+  document.getElementById('logBox').classList.remove('show');
+  document.getElementById('commitMsg').value='';
+  markStep(saved.token?2:1);
+  setStatus('status-idle','⏳ 等待选择文件');
+}
+if(saved.token)markStep(2);else markStep(1);
+updatePagesUrl();
+</script>
+</body>
+</html>
