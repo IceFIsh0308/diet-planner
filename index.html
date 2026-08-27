@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
-    <title>智能饮食规划器 V1.2</title>
+    <title>智能饮食规划器 V1.3</title>
     <!-- SheetJS CDN — 用于XLSX多sheet导入导出 -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <!-- Supabase JS SDK v2 -->
@@ -178,6 +178,7 @@
         .weight-chart-label { font-size: 10px; color: var(--text-secondary); padding: 2px 6px; font-weight: 600; }
 
         .weight-filter { display: flex; gap: 4px; align-items: center; margin-top: 4px; flex-wrap: wrap; }
+        .weight-filter .weight-days-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
         .weight-filter input[type="number"] { width: 50px; padding: 2px 4px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 10px; text-align: center; }
         .weight-filter label { font-size: 10px; color: var(--text-secondary); }
 
@@ -415,9 +416,9 @@
                     <button class="btn btn-primary btn-sm" id="addWeightBtn">记录</button>
                 </div>
                 <div class="weight-filter">
-                    <label>显示天数:</label>
-                    <input type="number" id="weightDays" value="7" min="3" max="90" />
-                    <button class="btn btn-outline btn-sm" id="weightRefreshBtn">刷新</button>
+                    <button class="btn btn-outline btn-sm weight-days-btn active" data-days="7">7天</button>
+                    <button class="btn btn-outline btn-sm weight-days-btn" data-days="14">14天</button>
+                    <input type="number" id="weightDays" value="7" min="3" max="90" style="width:55px;" placeholder="自定义" title="自定义天数" />
                     <span class="text-secondary" style="font-size:10px;margin-left:4px;">(优先空腹) · 双击图表可放大</span>
                 </div>
                 <div class="weight-chart-container" id="weightChartContainer">
@@ -583,7 +584,7 @@
 </div>
 
 <div class="toast" id="toast"></div>
-<div style="position:fixed;bottom:4px;right:8px;font-size:10px;color:#ccc;pointer-events:none;">V1.2</div>
+<div style="position:fixed;bottom:4px;right:8px;font-size:10px;color:#ccc;pointer-events:none;">V1.3</div>
 
 <script>
     // ============================================================
@@ -2756,7 +2757,7 @@
                     // 再从云端加载
                     await loadFromCloud();
                     showMainApp();
-                    console.log('🥗 智能饮食规划器 V1.2 已加载（云端模式）');
+                    console.log('🥗 智能饮食规划器 V1.3 已加载（云端模式）');
                     return;
                 }
             } catch (e) {
@@ -2766,7 +2767,7 @@
         // 未登录，显示登录表单，隐藏 loading
         document.getElementById('authInitLoading').style.display = 'none';
         document.getElementById('authFormBox').style.display = 'block';
-        console.log('🥗 智能饮食规划器 V1.2 已加载（待登录）');
+        console.log('🥗 智能饮食规划器 V1.3 已加载（待登录）');
     });
 
     function bindAllEvents() {
@@ -2820,7 +2821,24 @@
 
         // 体重图表
         document.getElementById('addWeightBtn').addEventListener('click', addWeightRecord);
-        document.getElementById('weightRefreshBtn').addEventListener('click', renderWeightChart);
+        // 7天/14天 按钮切换
+        document.querySelectorAll('.weight-days-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.weight-days-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                const days = parseInt(this.dataset.days) || 7;
+                document.getElementById('weightDays').value = days;
+                renderWeightChart();
+            });
+        });
+        // 自定义天数输入
+        document.getElementById('weightDays').addEventListener('change', function() {
+            let days = parseInt(this.value) || 7;
+            if (days < 3) days = 3; if (days > 90) days = 90;
+            this.value = days;
+            document.querySelectorAll('.weight-days-btn').forEach(b => b.classList.remove('active'));
+            renderWeightChart();
+        });
         // 双击图表放大
         document.getElementById('weightChartContainer').addEventListener('dblclick', openChartZoom);
 
@@ -2844,7 +2862,7 @@
         let resizeTimer;
         window.addEventListener('resize', function() { clearTimeout(resizeTimer); resizeTimer = setTimeout(renderWeightChart, 200); });
 
-        console.log('🥗 智能饮食规划器 V1.2 事件绑定完成');
+        console.log('🥗 智能饮食规划器 V1.3 事件绑定完成');
     }
 
     // 全局错误捕获
