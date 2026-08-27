@@ -611,6 +611,58 @@
 
 <script>
     // ============================================================
+    //  架构说明（供 AI Agent / 开发者阅读）
+    //  ============================================================
+    //  本应用是一个纯前端单页应用，无后端服务器。
+    //
+    //  数据存储架构（三层）：
+    //    1. Supabase（云端）— PostgreSQL 数据库，用户认证 + 数据持久化
+    //       - URL: SUPABASE_URL（见下方配置）
+    //       - 表结构：profiles（档案）/ daily_data（饮食）/ weight_records（体重）/ custom_foods（食物）
+    //       - 认证：Supabase Auth（邮箱+密码），RLS 行级权限保证用户只能读写自己的数据
+    //       - anon key 暴露在前端是安全的，安全性靠 RLS 保障
+    //
+    //    2. localStorage（本地兜底）— key: diet_plan_data_v21
+    //       - 结构：{ users, dailyData, weightRecords, customFoods, currentUserId }
+    //       - 未登录时所有数据只写这里；登录后作为离线缓存
+    //
+    //    3. 内存变量 — users / dailyData / weightRecords / customFoods / currentUserId
+    //       - 运行时直接操作的对象，saveAll() 写 localStorage，save*ToCloud() 写 Supabase
+    //
+    //  数据流：
+    //    登录 → loadAll(本地) → loadFromCloud(云端)
+    //      ├─ 云端有数据 → 用云端覆盖本地
+    //      ├─ 云端有档案但无明细 + 本地有 → 保留本地 + 上传云端
+    //      └─ 云端空 + 本地有 → 创建云端档案 + 批量上传
+    //
+    //    操作 → saveAll() 写本地 + save*ToCloud() 写云端（增量）
+    //    刷新 → getSession() 检测登录 → loadAll + loadFromCloud
+    //    断网 → 只写 localStorage → 联网后同步
+    //
+    //  云端同步函数清单：
+    //    loadFromCloud()           — 全量加载（登录/刷新时）
+    //    saveProfileToCloud()      — 档案 upsert
+    //    saveMealToCloud()         — 饮食 insert（已废弃，addFoodItem 内联实现）
+    //    deleteMealFromCloud()     — 饮食 delete（已废弃，deleteFoodItem 内联实现）
+    //    saveWeightToCloud()       — 体重 insert（已废弃，addWeightRecord 内联实现）
+    //    saveCustomFoodToCloud()   — 食物 insert（已废弃，addCustomFood 内联实现）
+    //    syncLocalMealsToCloud()   — 批量上传饮食（导入数据时）
+    //    syncLocalWeightsToCloud() — 批量上传体重
+    //    syncLocalFoodsToCloud()   — 批量上传食物
+    //
+    //  关键变量：
+    //    supabaseClient — Supabase 客户端实例
+    //    currentUser    — Supabase auth 用户对象（含 .id 和 .email）
+    //    isOnlineMode   — 是否已登录云端（false=离线模式）
+    //
+    //  新增同步逻辑时：
+    //    1. 在业务函数中加 if (isOnlineMode && currentUser) { ... }
+    //    2. insert 后取返回的 id 存到 item._dbId，用于后续 delete/update
+    //    3. delete 时用 item._dbId 删除云端对应记录
+    //    4. update 时用 item._dbId 更新云端对应记录
+    // ============================================================
+
+    // ============================================================
     //  Supabase 配置
     // ============================================================
     const SUPABASE_URL = 'https://wqxzqqbzbsoctnmvftbw.supabase.co';
@@ -1665,7 +1717,7 @@
     function handleDragLeave(e) { const el = e.target.closest('.food-item-sm'); if (el) { el.classList.remove('drag-over'); } }
 
     // 统一拖放处理：支持同餐次排序 + 跨餐次移动
-    function handleFoodDrop(e, targetMealKey, targetIdx) {
+    async function handleFoodDrop(e, targetMealKey, targetIdx) {
         e.preventDefault();
         e.stopPropagation();
         document.querySelectorAll('.food-item-sm.drag-over').forEach(el => el.classList.remove('drag-over'));
@@ -1698,6 +1750,21 @@
         if (!dailyData[user.id]) dailyData[user.id] = {};
         if (!dailyData[user.id][date]) dailyData[user.id][date] = meals;
         saveAll(); renderMeals(); renderAdvice(); renderHistory();
+        // 云端同步：跨餐次移动 = 删旧 + 插新
+        if (isOnlineMode && currentUser) {
+            if (moved._dbId) {
+                try { await supabaseClient.from('daily_data').delete().eq('id', moved._dbId); } catch(e) { console.error('云端删除旧记录失败:', e); }
+            }
+            try {
+                const { data } = await supabaseClient.from('daily_data').insert({
+                    user_id: currentUser.id, date, meal_key: targetMealKey,
+                    food_id: moved.id || '', food_name: moved.name, weight: moved.weight,
+                    unit: moved.unit, calories: moved.calories, protein: moved.protein,
+                    carbs: moved.carbs, fat: moved.fat
+                }).select().single();
+                if (data) moved._dbId = data.id;
+            } catch(e) { console.error('云端插入新记录失败:', e); }
+        }
         const mealNames = { breakfast: '早餐', lunch: '午餐', dinner: '晚餐', snack: '加餐' };
         showToast(`✅ 已移动至 ${mealNames[targetMealKey]}`);
     }
