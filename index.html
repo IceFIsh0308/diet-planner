@@ -2470,29 +2470,43 @@
         renderUserInfo(); renderAdvice(); renderMeals(); renderWeightChart(); renderHistory();
         showToast('已删除用户');
     }
-    function deleteFoodItem(meal, idx) {
+    async function deleteFoodItem(meal, idx) {
         const user = getCurrentUser(); if (!user) return;
         const date = selectedDate || getToday();
         if (!dailyData[user.id]) dailyData[user.id] = {};
         if (!dailyData[user.id][date]) dailyData[user.id][date] = { breakfast: [], lunch: [], dinner: [], snack: [] };
         const meals = dailyData[user.id][date];
         if (meals[meal] && meals[meal][idx] !== undefined) {
+            const item = meals[meal][idx];
             meals[meal].splice(idx, 1);
             saveAll(); renderMeals(); renderAdvice(); renderHistory();
+            // 云端删除
+            if (isOnlineMode && item._dbId) {
+                try { await supabaseClient.from('daily_data').delete().eq('id', item._dbId); } catch(e) { console.error('云端删除失败:', e); }
+            }
             showToast('已删除');
         }
     }
-    function clearToday() {
+    async function clearToday() {
         const user = getCurrentUser(); if (!user) { showToast('请先选择用户'); return; }
         const date = selectedDate || getToday();
         if (confirm(`清空 ${date} 的所有饮食记录？`)) {
             if (!dailyData[user.id]) dailyData[user.id] = {};
+            const oldMeals = dailyData[user.id][date];
             dailyData[user.id][date] = { breakfast: [], lunch: [], dinner: [], snack: [] };
             saveAll(); renderMeals(); renderAdvice(); renderHistory();
+            // 云端删除当天所有记录
+            if (isOnlineMode && oldMeals) {
+                try {
+                    const dbIds = [];
+                    Object.values(oldMeals).forEach(arr => arr.forEach(item => { if (item._dbId) dbIds.push(item._dbId); }));
+                    for (const id of dbIds) { await supabaseClient.from('daily_data').delete().eq('id', id); }
+                } catch(e) { console.error('云端清空失败:', e); }
+            }
             showToast('已清空');
         }
     }
-    function addFoodItem(food, weight, unit) {
+    async function addFoodItem(food, weight, unit) {
         if (!food || weight <= 0) { showToast('请选择食物并输入有效数量'); return; }
         const user = getCurrentUser(); if (!user) { showToast('请先选择用户'); return; }
         let actualWeight = weight;
@@ -2511,12 +2525,23 @@
         if (!dailyData[user.id][date]) dailyData[user.id][date] = { breakfast: [], lunch: [], dinner: [], snack: [] };
         dailyData[user.id][date][currentMeal].push(item);
         saveAll(); renderMeals(); renderAdvice(); renderHistory();
+        // 云端同步
+        if (isOnlineMode && currentUser) {
+            try {
+                const { data } = await supabaseClient.from('daily_data').insert({
+                    user_id: currentUser.id, date, meal_key: currentMeal,
+                    food_id: item.id, food_name: item.name, weight: item.weight, unit: item.unit,
+                    calories: item.calories, protein: item.protein, carbs: item.carbs, fat: item.fat
+                }).select().single();
+                if (data) item._dbId = data.id;
+            } catch(e) { console.error('云端添加失败:', e); }
+        }
         const mealNames = { breakfast: '早餐', lunch: '午餐', dinner: '晚餐', snack: '加餐' };
         showToast(`✅ 已添加 ${food.name} ${weight}${unit} 到 ${mealNames[currentMeal]}`);
         selectedFood = null;
     }
 
-    function addCustomFood(name, calories, protein, carbs, fat, unitType) {
+    async function addCustomFood(name, calories, protein, carbs, fat, unitType) {
         const user = getCurrentUser(); if (!user) { showToast('请先选择用户'); return; }
         const existing = getFullFoodDB().find(f => f.name === name);
         if (existing) { showToast('⚠️ 该食材已存在'); return null; }
@@ -2531,6 +2556,18 @@
         if (!customFoods[user.id]) customFoods[user.id] = [];
         customFoods[user.id].push(newFood);
         saveAll();
+        // 云端同步
+        if (isOnlineMode && currentUser) {
+            try {
+                const { data } = await supabaseClient.from('custom_foods').insert({
+                    user_id: currentUser.id, food_id: newFood.id, name: newFood.name,
+                    calories: newFood.calories, protein: newFood.protein, carbs: newFood.carbs,
+                    fat: newFood.fat, default_unit: newFood.defaultUnit,
+                    unit_weight: 100, unit_type: newFood.unitType
+                }).select().single();
+                if (data) newFood._dbId = data.id;
+            } catch(e) { console.error('云端添加食物失败:', e); }
+        }
         showToast(`✅ 已添加自定义食材: ${name} (${newFood.calories} 大卡/100克)`);
         return newFood;
     }
@@ -2573,7 +2610,7 @@
         modal.classList.add('active');
     }
     function closeUserModal() { document.getElementById('userModal').classList.remove('active'); editingUserId = null; }
-    function saveUserFromModal() {
+    async function saveUserFromModal() {
         const name = document.getElementById('mName').value.trim() || '未命名';
         const gender = document.getElementById('mGender').value;
         const age = parseInt(document.getElementById('mAge').value) || 25;
@@ -2598,6 +2635,8 @@
                 Object.assign(user, { name, gender, age, height, weight, bodyFat, goal, targetWeight, targetBodyFat, activity, days });
                 if (!user.initialWeight) user.initialWeight = initW;
                 if (!user.initialBodyFat) user.initialBodyFat = initBf;
+                // 云端同步
+                if (isOnlineMode) await saveProfileToCloud(user);
             }
             showToast('✅ 已更新');
         } else {
@@ -2605,7 +2644,19 @@
             const dup = users.find(u => u.name === name);
             if (dup) { showToast('⚠️ 已存在同名用户「' + name + '」，请使用不同名称'); return; }
             const newUser = { id: 'user_' + Date.now(), name, gender, age, height, weight, bodyFat, goal, targetWeight, targetBodyFat, activity, days, initialWeight: weight, initialBodyFat: bodyFat };
+            // 云端创建
+            if (isOnlineMode && currentUser) {
+                try {
+                    const { data, error } = await supabaseClient.from('profiles').insert({
+                        user_id: currentUser.id, name, gender, age, height, weight, body_fat: bodyFat, goal,
+                        target_weight: targetWeight, target_body_fat: targetBodyFat, activity, days,
+                        initial_weight: weight, initial_body_fat: bodyFat
+                    }).select().single();
+                    if (!error && data) newUser.id = data.id;
+                } catch(e) { console.error('云端创建档案失败:', e); }
+            }
             users.push(newUser); currentUserId = newUser.id;
+            weightRecords[newUser.id] = []; customFoods[newUser.id] = []; dailyData[newUser.id] = {};
             showToast('✅ 已创建');
         }
         closeUserModal(); saveAll();
@@ -2616,7 +2667,7 @@
     // ============================================================
     //  体重记录 — 与V8一致
     // ============================================================
-    function addWeightRecord() {
+    async function addWeightRecord() {
         const user = getCurrentUser(); if (!user) { showToast('请先选择用户'); return; }
         const date = document.getElementById('weightDate').value || getToday();
         const weight = parseFloat(document.getElementById('weightVal').value);
@@ -2626,8 +2677,25 @@
         if (bodyfat && (bodyfat < 0 || bodyfat > 60)) { showToast('体脂率范围 0-60%'); return; }
         if (!weightRecords[user.id]) weightRecords[user.id] = [];
         const existing = weightRecords[user.id].find(r => r.date === date && r.time === time);
-        if (existing) { existing.weight = weight; existing.bodyfat = bodyfat || existing.bodyfat; }
-        else { weightRecords[user.id].push({ date, weight, bodyfat: bodyfat || null, time }); }
+        if (existing) {
+            existing.weight = weight; existing.bodyfat = bodyfat || existing.bodyfat;
+            // 云端更新
+            if (isOnlineMode && existing._dbId) {
+                try { await supabaseClient.from('weight_records').update({ weight, bodyfat: bodyfat || null }).eq('id', existing._dbId); } catch(e) { console.error('云端更新体重失败:', e); }
+            }
+        } else {
+            const record = { date, weight, bodyfat: bodyfat || null, time };
+            weightRecords[user.id].push(record);
+            // 云端新增
+            if (isOnlineMode && currentUser) {
+                try {
+                    const { data } = await supabaseClient.from('weight_records').insert({
+                        user_id: currentUser.id, date, weight, bodyfat: bodyfat || null, time, note: ''
+                    }).select().single();
+                    if (data) record._dbId = data.id;
+                } catch(e) { console.error('云端添加体重失败:', e); }
+            }
+        }
         saveAll(); renderWeightChart(); renderUserInfo(); renderAdvice(); renderMeals();
         showToast(`✅ 已记录 ${date} ${time} 体重 ${weight}公斤`);
         document.getElementById('weightVal').value = '';
