@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
-    <title>智能饮食规划器 V1.4</title>
+    <title>智能饮食规划器 V1.5</title>
     <!-- SheetJS CDN — 用于XLSX多sheet导入导出 -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <!-- Supabase JS SDK v2 -->
@@ -520,6 +520,17 @@
             <div class="field"><label>每周锻炼次数</label><select id="mActivity"><option value="0">0 次（久坐）</option><option value="1">1-2 次（轻度）</option><option value="3" selected>3-4 次（中度）</option><option value="5">5-6 次（高度）</option><option value="7">7 次及以上（极高）</option></select></div>
             <div class="field"><label>计划周期(天)</label><input type="number" id="mDays" placeholder="30" value="60" /></div>
         </div>
+        <div id="initialWeightBlock" style="display:none;">
+            <div style="display:flex;align-items:center;gap:6px;margin:8px 0 4px;">
+                <span style="font-size:11px;color:var(--text-secondary);">首次体重/体脂（建档快照）</span>
+                <button type="button" class="btn btn-outline btn-sm" id="unlockInitBtn" onclick="toggleInitLock()">🔓 解锁修改</button>
+            </div>
+            <div class="row">
+                <div class="field"><label>首次体重(公斤)</label><input type="number" id="mInitWeight" placeholder="74" disabled /></div>
+                <div class="field"><label>首次体脂率(%)</label><input type="number" id="mInitBodyFat" placeholder="18" disabled /></div>
+                <div class="field"></div>
+            </div>
+        </div>
         <div id="previewContainer" class="preview-box">
             <div style="font-weight:600;margin-bottom:4px;">📊 计划预览</div>
             <div id="previewContent"><div class="row-item"><span class="label">请填写完整信息后自动计算</span></div></div>
@@ -584,7 +595,7 @@
 </div>
 
 <div class="toast" id="toast"></div>
-<div style="position:fixed;bottom:4px;right:8px;font-size:10px;color:#ccc;pointer-events:none;">V1.4</div>
+<div style="position:fixed;bottom:4px;right:8px;font-size:10px;color:#ccc;pointer-events:none;">V1.5</div>
 
 <script>
     // ============================================================
@@ -870,23 +881,28 @@
 
                 // 更新本地档案为云端档案
                 if (localUsers.length > 0) {
-                    // 本地档案信息合并到云端档案
+                    // 本地档案信息合并到云端档案，但保留云端的 initialWeight/initialBodyFat（建档快照以云端为准）
+                    const cloudInitWeight = users[0].initialWeight;
+                    const cloudInitBodyFat = users[0].initialBodyFat;
                     const merged = { ...localUsers[0], id: users[0].id };
                     Object.assign(users[0], merged, { id: users[0].id });
+                    // 恢复云端建档快照（不被本地 null 覆盖）
+                    if (cloudInitWeight !== null && cloudInitWeight !== undefined) users[0].initialWeight = cloudInitWeight;
+                    if (cloudInitBodyFat !== null && cloudInitBodyFat !== undefined) users[0].initialBodyFat = cloudInitBodyFat;
                     await saveProfileToCloud(users[0]);
                 }
             } else {
                 // 云端无档案，本地有数据 → 上传本地数据到云端
                 if (users.length > 0) {
                     const localUser = users[0];
-                    // 创建云端档案
+                    // 创建云端档案（不写 initial_weight/initial_body_fat，保持 null）
                     const { data: newProfile, error } = await supabaseClient.from('profiles').insert({
                         user_id: uid, name: localUser.name, gender: localUser.gender,
                         age: localUser.age, height: localUser.height, weight: localUser.weight,
                         body_fat: localUser.bodyFat, goal: localUser.goal,
                         target_weight: localUser.targetWeight, target_body_fat: localUser.targetBodyFat,
                         activity: localUser.activity, days: localUser.days,
-                        initial_weight: localUser.initialWeight, initial_body_fat: localUser.initialBodyFat
+                        initial_weight: localUser.initialWeight || null, initial_body_fat: localUser.initialBodyFat || null
                     }).select().single();
                     if (!error && newProfile) {
                         const newId = newProfile.id;
@@ -913,8 +929,8 @@
                         currentUserId = newId;
                     }
                 } else {
-                    // 本地和云端都无数据，创建默认档案
-                    const defaultProfile = { name: '我的档案', gender: 'male', age: 25, height: 175, weight: 74, bodyFat: 18, goal: 'cut', targetWeight: 70, targetBodyFat: 15, activity: 3, days: 60, initialWeight: 74, initialBodyFat: 18 };
+                    // 本地和云端都无数据，创建默认档案（不写 initial_weight/initial_body_fat，保持数据库 null）
+                    const defaultProfile = { name: '我的档案', gender: 'male', age: 25, height: 175, weight: 74, bodyFat: 18, goal: 'cut', targetWeight: 70, targetBodyFat: 15, activity: 3, days: 60, initialWeight: null, initialBodyFat: null };
                     const { data: newProfile, error } = await supabaseClient.from('profiles').insert({ user_id: uid, ...defaultProfile }).select().single();
                     if (!error && newProfile) {
                         users.push({ id: newProfile.id, ...defaultProfile });
@@ -1009,7 +1025,7 @@
             body_fat: profile.bodyFat, goal: profile.goal,
             target_weight: profile.targetWeight, target_body_fat: profile.targetBodyFat,
             activity: profile.activity, days: profile.days,
-            initial_weight: profile.initialWeight, initial_body_fat: profile.initialBodyFat
+            initial_weight: profile.initialWeight || null, initial_body_fat: profile.initialBodyFat || null
         };
         await supabaseClient.from('profiles').upsert(payload, { onConflict: 'id' });
     }
@@ -1121,7 +1137,7 @@
             users = []; dailyData = {}; weightRecords = {}; customFoods = {}; currentUserId = null;
         }
         if (users.length === 0) {
-            const u = { id: 'user_' + Date.now(), name: '我的档案', gender: 'male', age: 25, height: 175, weight: 74, bodyFat: 18, goal: 'cut', targetWeight: 70, targetBodyFat: 15, activity: 3, days: 60, initialWeight: 74, initialBodyFat: 18 };
+            const u = { id: 'user_' + Date.now(), name: '我的档案', gender: 'male', age: 25, height: 175, weight: 74, bodyFat: 18, goal: 'cut', targetWeight: 70, targetBodyFat: 15, activity: 3, days: 60, initialWeight: null, initialBodyFat: null };
             users.push(u); currentUserId = u.id; saveAll();
         }
     }
@@ -1285,7 +1301,9 @@
         if (user.targetBodyFat && latest && latest.bodyfat) { const gap = latest.bodyfat - user.targetBodyFat; bfGap = gap.toFixed(1) + '%'; bfGapClass = gap > 0 ? 'gap-bad' : (gap < -0.5 ? 'gap-good' : ''); }
         const initWeight = user.initialWeight || user.weight;
         const initBf = user.initialBodyFat || user.bodyFat;
-        detail.innerHTML = `<strong>${user.name}</strong> · ${user.gender==='male'?'男':'女'} · ${user.age}岁 · ${user.height}厘米<br/><span style="display:inline-block;width:100%;"><span>当前体重 <strong>${latest ? latest.weight : user.weight}</strong> 公斤</span><span style="margin-left:12px;">体脂 <strong>${latest && latest.bodyfat ? latest.bodyfat : user.bodyFat}</strong> %</span><span class="initial-info">📌 建档时 ${initWeight}公斤 / ${initBf}%</span></span><br/>目标: ${goalMap[user.goal]} → ${user.targetWeight||'—'}公斤 / ${user.targetBodyFat||'—'}% · 锻炼: ${actMap[user.activity]||'—'}/周 · ${user.days||'—'}天<span style="margin-left:6px;cursor:pointer;color:var(--primary);font-size:11px;" onclick="openUserModal('${user.id}')">✎</span><br/><span style="font-size:11px;">距目标体重: <span class="${weightGapClass}">${weightGap}</span> · 距目标体脂: <span class="${bfGapClass}">${bfGap}</span></span><span style="font-size:10px;color:var(--text-secondary);margin-left:8px;">(基于最新记录)</span>`;
+        const hasInitSnapshot = !!(user.initialWeight && user.initialBodyFat);
+        const initInfo = hasInitSnapshot ? `📌 建档时 ${initWeight}公斤 / ${initBf}%` : `📌 建档快照: 未记录`;
+        detail.innerHTML = `<strong>${user.name}</strong> · ${user.gender==='male'?'男':'女'} · ${user.age}岁 · ${user.height}厘米<br/><span style="display:inline-block;width:100%;"><span>当前体重 <strong>${latest ? latest.weight : user.weight}</strong> 公斤</span><span style="margin-left:12px;">体脂 <strong>${latest && latest.bodyfat ? latest.bodyfat : user.bodyFat}</strong> %</span><span class="initial-info">${initInfo}</span></span><br/>目标: ${goalMap[user.goal]} → ${user.targetWeight||'—'}公斤 / ${user.targetBodyFat||'—'}% · 锻炼: ${actMap[user.activity]||'—'}/周 · ${user.days||'—'}天<span style="margin-left:6px;cursor:pointer;color:var(--primary);font-size:11px;" onclick="openUserModal('${user.id}')">✎</span><br/><span style="font-size:11px;">距目标体重: <span class="${weightGapClass}">${weightGap}</span> · 距目标体脂: <span class="${bfGapClass}">${bfGap}</span></span><span style="font-size:10px;color:var(--text-secondary);margin-left:8px;">(基于最新记录)</span>`;
     }
 
     // ============================================================
@@ -2320,8 +2338,8 @@
                                 targetBodyFat: parseFloat(row['目标体脂率(%)']) || null,
                                 activity: parseInt(row['每周锻炼次数']) || 3,
                                 days: parseInt(row['计划周期(天)']) || 60,
-                                initialWeight: parseFloat(row['建档体重(kg)']) || parseFloat(row['体重(kg)']) || 70,
-                                initialBodyFat: parseFloat(row['建档体脂率(%)']) || parseFloat(row['体脂率(%)']) || 18,
+                                initialWeight: parseFloat(row['建档体重(kg)']) || null,
+                                initialBodyFat: parseFloat(row['建档体脂率(%)']) || null,
                             };
                             // 校验
                             if (importedUser.weight < 20 || importedUser.weight > 300) return;
@@ -2636,6 +2654,21 @@
         document.getElementById('mTargetBf').value = user.targetBodyFat || '';
         document.getElementById('mActivity').value = user.activity || 3;
         document.getElementById('mDays').value = user.days || 60;
+        // 首次体重/体脂：仅已有建档快照时展示（首次建档不展示）
+        const hasInit = user.initialWeight && user.initialBodyFat;
+        const initBlock = document.getElementById('initialWeightBlock');
+        if (initBlock) {
+            initBlock.style.display = hasInit ? 'block' : 'none';
+            if (hasInit) {
+                document.getElementById('mInitWeight').value = user.initialWeight || '';
+                document.getElementById('mInitBodyFat').value = user.initialBodyFat || '';
+                // 重置为锁定状态
+                document.getElementById('mInitWeight').disabled = true;
+                document.getElementById('mInitBodyFat').disabled = true;
+                const btn = document.getElementById('unlockInitBtn');
+                if (btn) btn.textContent = '🔓 解锁修改';
+            }
+        }
         const inputs = ['mName', 'mGender', 'mAge', 'mHeight', 'mWeight', 'mBodyFat', 'mGoal', 'mTargetWeight', 'mTargetBf', 'mActivity', 'mDays'];
         inputs.forEach(id => {
             const el = document.getElementById(id);
@@ -2645,6 +2678,19 @@
         modal.classList.add('active');
     }
     function closeUserModal() { document.getElementById('userModal').classList.remove('active'); editingUserId = null; }
+    // 解锁/锁定首次体重体脂输入（防止误改快照）
+    function toggleInitLock() {
+        const iw = document.getElementById('mInitWeight');
+        const ib = document.getElementById('mInitBodyFat');
+        const btn = document.getElementById('unlockInitBtn');
+        if (!iw || !btn) return;
+        const unlock = iw.disabled;
+        iw.disabled = !unlock;
+        ib.disabled = !unlock;
+        btn.textContent = unlock ? '🔒 锁定' : '🔓 解锁修改';
+        if (unlock) { iw.focus(); }
+        showToast(unlock ? '首次体重已解锁，可修改' : '已锁定');
+    }
     async function saveUserFromModal() {
         const name = document.getElementById('mName').value.trim() || '未命名';
         const gender = document.getElementById('mGender').value;
@@ -2662,11 +2708,27 @@
         // V48: 单用户模式，只编辑当前用户
         const user = getCurrentUser();
         if (user) {
-            const initW = user.initialWeight || user.weight;
-            const initBf = user.initialBodyFat || user.bodyFat;
+            const hadInit = !!(user.initialWeight && user.initialBodyFat);
+            // 读取首次体重/体脂输入（仅编辑已有快照时显示）
+            let newInitWeight = user.initialWeight;
+            let newInitBodyFat = user.initialBodyFat;
+            if (hadInit) {
+                const iwEl = document.getElementById('mInitWeight');
+                const ibEl = document.getElementById('mInitBodyFat');
+                const iw = parseFloat(iwEl ? iwEl.value : '');
+                const ib = parseFloat(ibEl ? ibEl.value : '');
+                if (iw > 0) newInitWeight = iw;
+                if (ib > 0) newInitBodyFat = ib;
+            }
             Object.assign(user, { name, gender, age, height, weight, bodyFat, goal, targetWeight, targetBodyFat, activity, days });
-            if (!user.initialWeight) user.initialWeight = initW;
-            if (!user.initialBodyFat) user.initialBodyFat = initBf;
+            // 首次建档：建档快照 = 当前体重/体脂；编辑时不覆盖（除非用户改了首次输入框）
+            if (!hadInit) {
+                user.initialWeight = weight;
+                user.initialBodyFat = bodyFat;
+            } else {
+                user.initialWeight = newInitWeight;
+                user.initialBodyFat = newInitBodyFat;
+            }
             // 云端同步
             if (isOnlineMode) await saveProfileToCloud(user);
             showToast('✅ 已更新');
@@ -2757,7 +2819,7 @@
                     // 再从云端加载
                     await loadFromCloud();
                     showMainApp();
-                    console.log('🥗 智能饮食规划器 V1.4 已加载（云端模式）');
+                    console.log('🥗 智能饮食规划器 V1.5 已加载（云端模式）');
                     return;
                 }
             } catch (e) {
@@ -2767,7 +2829,7 @@
         // 未登录，显示登录表单，隐藏 loading
         document.getElementById('authInitLoading').style.display = 'none';
         document.getElementById('authFormBox').style.display = 'block';
-        console.log('🥗 智能饮食规划器 V1.4 已加载（待登录）');
+        console.log('🥗 智能饮食规划器 V1.5 已加载（待登录）');
     });
 
     function bindAllEvents() {
@@ -2862,7 +2924,7 @@
         let resizeTimer;
         window.addEventListener('resize', function() { clearTimeout(resizeTimer); resizeTimer = setTimeout(renderWeightChart, 200); });
 
-        console.log('🥗 智能饮食规划器 V1.4 事件绑定完成');
+        console.log('🥗 智能饮食规划器 V1.5 事件绑定完成');
     }
 
     // 全局错误捕获
