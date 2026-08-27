@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
-    <title>智能饮食规划器 V1.3</title>
+    <title>智能饮食规划器 V1.4</title>
     <!-- SheetJS CDN — 用于XLSX多sheet导入导出 -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <!-- Supabase JS SDK v2 -->
@@ -517,7 +517,7 @@
             <div class="field"><label>目标体脂率(%)</label><input type="number" id="mTargetBf" placeholder="15" /></div>
         </div>
         <div class="row">
-            <div class="field"><label>每周锻炼次数</label><select id="mActivity"><option value="0">0 次</option><option value="1">1 次</option><option value="2">2 次</option><option value="3" selected>3 次</option><option value="4">4 次</option><option value="5">5 次</option><option value="6">6 次</option><option value="7">7 次及以上</option></select></div>
+            <div class="field"><label>每周锻炼次数</label><select id="mActivity"><option value="0">0 次（久坐）</option><option value="1">1-2 次（轻度）</option><option value="3" selected>3-4 次（中度）</option><option value="5">5-6 次（高度）</option><option value="7">7 次及以上（极高）</option></select></div>
             <div class="field"><label>计划周期(天)</label><input type="number" id="mDays" placeholder="30" value="60" /></div>
         </div>
         <div id="previewContainer" class="preview-box">
@@ -584,7 +584,7 @@
 </div>
 
 <div class="toast" id="toast"></div>
-<div style="position:fixed;bottom:4px;right:8px;font-size:10px;color:#ccc;pointer-events:none;">V1.3</div>
+<div style="position:fixed;bottom:4px;right:8px;font-size:10px;color:#ccc;pointer-events:none;">V1.4</div>
 
 <script>
     // ============================================================
@@ -2757,7 +2757,7 @@
                     // 再从云端加载
                     await loadFromCloud();
                     showMainApp();
-                    console.log('🥗 智能饮食规划器 V1.3 已加载（云端模式）');
+                    console.log('🥗 智能饮食规划器 V1.4 已加载（云端模式）');
                     return;
                 }
             } catch (e) {
@@ -2767,7 +2767,7 @@
         // 未登录，显示登录表单，隐藏 loading
         document.getElementById('authInitLoading').style.display = 'none';
         document.getElementById('authFormBox').style.display = 'block';
-        console.log('🥗 智能饮食规划器 V1.3 已加载（待登录）');
+        console.log('🥗 智能饮食规划器 V1.4 已加载（待登录）');
     });
 
     function bindAllEvents() {
@@ -2862,7 +2862,7 @@
         let resizeTimer;
         window.addEventListener('resize', function() { clearTimeout(resizeTimer); resizeTimer = setTimeout(renderWeightChart, 200); });
 
-        console.log('🥗 智能饮食规划器 V1.3 事件绑定完成');
+        console.log('🥗 智能饮食规划器 V1.4 事件绑定完成');
     }
 
     // 全局错误捕获
