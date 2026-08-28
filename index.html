@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
-    <title>智能饮食规划器 V1.8</title>
+    <title>智能饮食规划器 V1.9</title>
     <!-- SheetJS CDN — 用于XLSX多sheet导入导出 -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <!-- Supabase JS SDK v2 -->
@@ -210,10 +210,12 @@
         .meal-add-area .ma-add { padding: 3px 8px; border: none; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; background: var(--primary); color: #fff; white-space: nowrap; margin-left: auto; }
         .meal-add-area .ma-add:hover { background: #1E6B35; }
         .meal-add-area .ma-add:disabled { background: var(--border); color: var(--text-secondary); cursor: not-allowed; }
-        .meal-add-area .ma-suggest { position: absolute; left: 0; right: 0; background: #fff; border: 1.5px solid var(--border); border-radius: 4px; max-height: 200px; overflow-y: auto; z-index: 200; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: none; }
+        .meal-add-area .ma-suggest { position: absolute; left: 0; right: 0; background: #fff; border: 1.5px solid var(--border); border-radius: 4px; max-height: 240px; overflow-y: auto; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.25); display: none; }
         .meal-add-area .ma-suggest.active { display: block; }
         .meal-add-area .ma-suggest.ma-suggest-down { top: calc(100% + 1px); }
         .meal-add-area .ma-suggest.ma-suggest-up { bottom: calc(100% + 1px); }
+        .meal-add-area .ma-suggest::-webkit-scrollbar { width: 4px; }
+        .meal-add-area .ma-suggest::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
         .meal-add-area .ma-suggest .ms-item { padding: 3px 6px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); font-size: 10px; }
         .meal-add-area .ma-suggest .ms-item:hover { background: var(--primary-bg); }
         .meal-add-area .ma-suggest .ms-item .ms-info { color: var(--text-secondary); font-size: 9px; }
@@ -595,7 +597,7 @@
 </div>
 
 <div class="toast" id="toast"></div>
-<div style="position:fixed;bottom:4px;right:8px;font-size:10px;color:#ccc;pointer-events:none;">V1.8</div>
+<div style="position:fixed;bottom:4px;right:8px;font-size:10px;color:#ccc;pointer-events:none;">V1.9</div>
 
 <script>
     // ============================================================
@@ -1509,21 +1511,22 @@
         }
     }
 
-    // 检测 meal-items 是否滚动到底部，决定建议框向上还是向下弹出
+    // 检测建议框是否超出视口底部，决定向下还是向上弹出
     function updateSuggestDirection(mealKey, suggestBox) {
-        const mealItems = document.getElementById(`meal-${mealKey}`);
-        if (!mealItems || !suggestBox) return;
-        // 检查是否滚动到底部：scrollTop + clientHeight >= scrollHeight - 2 (2px tolerance)
-        const isAtBottom = (mealItems.scrollTop + mealItems.clientHeight) >= (mealItems.scrollHeight - 2);
-        if (isAtBottom) {
-            // 滚动到底部，建议框向上弹出
-            suggestBox.classList.add('ma-suggest-up');
-            suggestBox.classList.remove('ma-suggest-down');
-        } else {
-            // 未到底部，建议框向下弹出
-            suggestBox.classList.add('ma-suggest-down');
-            suggestBox.classList.remove('ma-suggest-up');
-        }
+        if (!suggestBox) return;
+        // 默认向下弹出
+        suggestBox.classList.add('ma-suggest-down');
+        suggestBox.classList.remove('ma-suggest-up');
+        // 等浏览器渲染后检测建议框底部是否超出视口
+        requestAnimationFrame(() => {
+            const rect = suggestBox.getBoundingClientRect();
+            const viewportH = window.innerHeight;
+            if (rect.bottom > viewportH) {
+                // 下面放不下，切换到向上
+                suggestBox.classList.add('ma-suggest-up');
+                suggestBox.classList.remove('ma-suggest-down');
+            }
+        });
     }
 
     // 餐次内搜索建议渲染
@@ -2819,7 +2822,7 @@
                     // 再从云端加载
                     await loadFromCloud();
                     showMainApp();
-                    console.log('🥗 智能饮食规划器 V1.8 已加载（云端模式）');
+                    console.log('🥗 智能饮食规划器 V1.9 已加载（云端模式）');
                     return;
                 }
             } catch (e) {
@@ -2829,7 +2832,7 @@
         // 未登录，显示登录表单，隐藏 loading
         document.getElementById('authInitLoading').style.display = 'none';
         document.getElementById('authFormBox').style.display = 'block';
-        console.log('🥗 智能饮食规划器 V1.8 已加载（待登录）');
+        console.log('🥗 智能饮食规划器 V1.9 已加载（待登录）');
     });
 
     function bindAllEvents() {
@@ -2924,7 +2927,7 @@
         let resizeTimer;
         window.addEventListener('resize', function() { clearTimeout(resizeTimer); resizeTimer = setTimeout(renderWeightChart, 200); });
 
-        console.log('🥗 智能饮食规划器 V1.8 事件绑定完成');
+        console.log('🥗 智能饮食规划器 V1.9 事件绑定完成');
     }
 
     // 全局错误捕获
