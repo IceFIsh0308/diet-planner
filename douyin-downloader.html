@@ -39,7 +39,7 @@
   /* 下载 + 速览 工具条 */
   .toolbar {
     background: var(--card); border-top: 1px solid rgba(255,255,255,.25);
-    display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
     padding: 8px 20px;
   }
   /* 左侧：速览流程（保留标题） */
@@ -56,20 +56,26 @@
   }
   .toolbar .flow .fs .mac { font-size: 9px; color: #aaa; }
   .toolbar .flow .ar { color: #d1d5db; font-size: 14px; }
-  /* 右侧：下载按钮（重点突出） */
-  .toolbar .dl-btn {
-    background: var(--primary); color: #fff; border: none; cursor: pointer;
-    padding: 10px 26px; border-radius: 10px; font-size: 14.5px; font-weight: 800;
-    transition: background .2s, transform .1s; box-shadow: 0 3px 10px rgba(254,44,85,.35);
-    white-space: nowrap; flex-shrink: 0;
-  }
-  .toolbar .dl-btn:hover { background: var(--primary-dark); }
-  .toolbar .dl-btn:active { transform: scale(.97); }
 
   /* 详细流程 */
-  .section { background: var(--card); border-radius: 14px; box-shadow: 0 2px 10px rgba(0,0,0,.05); padding: 24px 28px; margin-bottom: 22px; }
-  .section h2 { font-size: 17px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
-  .tabs { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
+  .section { background: var(--card); border-radius: 14px; box-shadow: 0 2px 10px rgba(0,0,0,.05); margin-bottom: 22px; }
+  .sec-head-sticky {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    padding: 12px 20px 10px;
+    background: var(--card); border-bottom: 1px solid var(--border);
+  }
+  .sec-head-sticky h2 { font-size: 17px; font-weight: 700; display: flex; align-items: center; gap: 8px; margin: 0; white-space: nowrap; }
+  .sec-head-sticky .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 0; }
+  .sec-head-sticky .dl-btn {
+    margin-left: auto;
+    background: var(--primary); color: #fff; border: none; cursor: pointer;
+    padding: 8px 22px; border-radius: 10px; font-size: 14px; font-weight: 800;
+    transition: background .2s, transform .1s; box-shadow: 0 3px 10px rgba(254,44,85,.35);
+    white-space: nowrap;
+  }
+  .sec-head-sticky .dl-btn:hover { background: var(--primary-dark); }
+  .sec-head-sticky .dl-btn:active { transform: scale(.97); }
+  .section .sec-body { padding: 16px 28px 24px; }
   .tab {
     padding: 8px 22px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;
     background: #f3f4f6; border: 1px solid var(--border); color: var(--text-2); transition: all .2s;
@@ -109,7 +115,7 @@
   .faq-item .where { display: inline-block; margin-top: 8px; font-size: 12px; font-weight: 700; color: var(--primary); background: #fff0f2; border: 1px solid #fecdd3; border-radius: 6px; padding: 3px 10px; }
 
   footer { text-align: center; color: #9ca3af; font-size: 12px; padding: 16px 0 40px; line-height: 1.8; }
-  @media (max-width: 640px) { .hero h1 { font-size: 15px; } .hero .logo { font-size: 18px; } .toolbar { padding: 8px 12px; gap: 8px; } .toolbar .flow-title { font-size: 12px; } .toolbar .flow .fs { font-size: 11px; padding: 2px 8px; } .toolbar .dl-btn { padding: 8px 18px; font-size: 13px; } }
+  @media (max-width: 640px) { .hero h1 { font-size: 15px; } .hero .logo { font-size: 18px; } .toolbar { padding: 8px 12px; gap: 8px; } .toolbar .flow-title { font-size: 12px; } .toolbar .flow .fs { font-size: 11px; padding: 2px 8px; } .sec-head-sticky { padding: 10px 12px 8px; gap: 8px; } .sec-head-sticky h2 { font-size: 15px; } .sec-head-sticky .dl-btn { padding: 7px 16px; font-size: 12.5px; } }
 </style>
 </head>
 <body>
@@ -137,6 +143,14 @@
         <span class="fs"><b>5</b> 打开 127.0.0.1:8765</span>
       </div>
     </div>
+  </div>
+  <!-- 详细流程标题行（含下载按钮）也固定 -->
+  <div class="sec-head-sticky">
+    <h2>🚀 详细部署流程</h2>
+    <div class="tabs">
+      <div class="tab active" data-tab="mac">🍎 macOS</div>
+      <div class="tab" data-tab="win">🪟 Windows</div>
+    </div>
     <button class="dl-btn" id="pkgBtn" onclick="downloadPackage()">⬇️ 下载工具包</button>
   </div>
 </div>
@@ -145,11 +159,7 @@
 
   <!-- 详细流程 -->
   <div class="section">
-    <h2>🚀 详细部署流程</h2>
-    <div class="tabs">
-      <div class="tab active" data-tab="mac">🍎 macOS</div>
-      <div class="tab" data-tab="win">🪟 Windows</div>
-    </div>
+    <div class="sec-body">
 
     <!-- Mac -->
     <div class="panel show" id="panel-mac">
