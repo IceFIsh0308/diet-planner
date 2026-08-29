@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>抖音视频下载器 · 本地安全解析</title>
+<title>抖音视频下载器 · 部署指南</title>
 <style>
   :root {
     --primary: #FE2C55;
@@ -22,31 +22,34 @@
   }
   .hero {
     background: linear-gradient(135deg, #FE2C55 0%, #ff6b8a 100%);
-    color: #fff; text-align: center; padding: 48px 20px 44px;
+    color: #fff; text-align: center; padding: 14px 20px 10px;
+    position: sticky; top: 0; z-index: 100;
   }
-  .hero .logo { font-size: 48px; }
-  .hero h1 { font-size: 28px; font-weight: 800; margin-top: 8px; }
-  .hero p { font-size: 14px; opacity: .92; margin-top: 8px; }
-  .hero .tags { margin-top: 14px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  .hero .logo { font-size: 22px; display: inline-block; vertical-align: middle; margin-right: 8px; }
+  .hero h1 { font-size: 18px; font-weight: 800; display: inline; vertical-align: middle; }
+  .hero .sub { font-size: 12px; opacity: .88; margin-top: 2px; }
+  .hero .tags { margin-top: 4px; display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
   .hero .tag {
-    font-size: 12px; padding: 4px 12px; border-radius: 999px;
-    background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.35);
+    font-size: 10px; padding: 2px 8px; border-radius: 999px;
+    background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.3);
   }
   .wrap { max-width: 880px; margin: 0 auto; padding: 0 16px 60px; }
 
-  /* 下载卡片 */
-  .dl-card {
-    background: var(--card); border-radius: 14px; box-shadow: 0 4px 20px rgba(0,0,0,.08);
-    padding: 22px 28px; text-align: center; margin: -24px 0 22px; position: relative;
+  /* 下载卡片 - 紧贴 hero 下方，一起固定 */
+  .dl-bar {
+    position: sticky; top: 0; z-index: 99;
+    background: var(--card); border-bottom: 1px solid var(--border);
+    padding: 8px 20px; display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;
   }
-  .dl-btn {
-    display: inline-flex; align-items: center; gap: 8px;
+  .dl-bar .dl-btn {
     background: var(--primary); color: #fff; border: none; cursor: pointer;
-    padding: 13px 32px; border-radius: 10px; font-size: 15px; font-weight: 700;
-    transition: background .2s, transform .1s; box-shadow: 0 4px 14px rgba(254,44,85,.35);
+    padding: 7px 20px; border-radius: 8px; font-size: 13px; font-weight: 700;
+    transition: background .2s, transform .1s; box-shadow: 0 2px 8px rgba(254,44,85,.3);
+    white-space: nowrap;
   }
-  .dl-btn:hover { background: var(--primary-dark); }
-  .dl-btn:active { transform: scale(.97); }
+  .dl-bar .dl-btn:hover { background: var(--primary-dark); }
+  .dl-bar .dl-btn:active { transform: scale(.97); }
+  .dl-bar .dl-hint { font-size: 11px; color: var(--text-2); }
   .dl-files { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 14px; }
   .dl-files .f {
     font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 11px;
@@ -114,37 +117,29 @@
   .faq-item .where { display: inline-block; margin-top: 8px; font-size: 12px; font-weight: 700; color: var(--primary); background: #fff0f2; border: 1px solid #fecdd3; border-radius: 6px; padding: 3px 10px; }
 
   footer { text-align: center; color: #9ca3af; font-size: 12px; padding: 16px 0 40px; line-height: 1.8; }
-  @media (max-width: 640px) { .hero { padding: 36px 16px 32px; } .hero h1 { font-size: 22px; } }
+  @media (max-width: 640px) { .hero h1 { font-size: 15px; } .hero .logo { font-size: 18px; } .dl-bar { padding: 6px 12px; } .dl-bar .dl-hint { display: none; } }
 </style>
 </head>
 <body>
 
-<!-- Hero -->
+<!-- Hero (sticky) -->
 <div class="hero">
-  <div class="logo">🎬</div>
-  <h1>抖音视频下载器</h1>
-  <p>本地安全解析 · 无水印下载 · Cookie 不出本机</p>
+  <span class="logo">🎬</span><h1>抖音视频下载器 · 部署指南</h1>
+  <div class="sub">本地安全解析 · 无水印下载 · Cookie 不出本机</div>
   <div class="tags">
     <span class="tag">macOS / Windows</span>
     <span class="tag">纯本地运行</span>
-    <span class="tag">无第三方解析站</span>
     <span class="tag">基于 yt-dlp</span>
   </div>
 </div>
 
-<div class="wrap">
+<!-- 下载工具包 (sticky bar) -->
+<div class="dl-bar">
+  <button class="dl-btn" id="pkgBtn" onclick="downloadPackage()">⬇️ 下载完整工具包 (zip)</button>
+  <span class="dl-hint">含 server.py + 操作界面 + 命令行版 + 使用指南.docx</span>
+</div>
 
-  <!-- 工具包下载 -->
-  <div class="dl-card">
-    <button class="dl-btn" id="pkgBtn" onclick="downloadPackage()">⬇️ 下载完整工具包 (zip)</button>
-    <div class="dl-files">
-      <span class="f">server.py</span>
-      <span class="f">抖音视频下载器.html</span>
-      <span class="f">解析抖音视频.py</span>
-      <span class="f">使用指南.docx</span>
-      <span class="f">README.md</span>
-    </div>
-  </div>
+<div class="wrap">
 
   <!-- 速览流程 -->
   <div class="quick">
