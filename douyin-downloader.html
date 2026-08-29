@@ -34,18 +34,12 @@
   /* 下载 + 速览 工具条 */
   .toolbar {
     background: var(--card); border-top: 1px solid rgba(255,255,255,.25);
-    display: flex; align-items: center; justify-content: center; gap: 18px; flex-wrap: wrap;
-    padding: 8px 16px;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+    padding: 8px 20px;
   }
-  .toolbar .dl-btn {
-    background: var(--primary); color: #fff; border: none; cursor: pointer;
-    padding: 8px 22px; border-radius: 8px; font-size: 13.5px; font-weight: 700;
-    transition: background .2s, transform .1s; box-shadow: 0 2px 8px rgba(254,44,85,.3);
-    white-space: nowrap;
-  }
-  .toolbar .dl-btn:hover { background: var(--primary-dark); }
-  .toolbar .dl-btn:active { transform: scale(.97); }
-  /* 速览流程条 */
+  /* 左侧：速览流程（保留标题） */
+  .toolbar .flow-wrap { display: flex; align-items: center; gap: 10px; }
+  .toolbar .flow-title { font-size: 13px; font-weight: 800; color: var(--text); white-space: nowrap; }
   .toolbar .flow { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
   .toolbar .flow .fs {
     display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text);
@@ -57,6 +51,15 @@
   }
   .toolbar .flow .fs .mac { font-size: 9px; color: #aaa; }
   .toolbar .flow .ar { color: #d1d5db; font-size: 14px; }
+  /* 右侧：下载按钮（重点突出） */
+  .toolbar .dl-btn {
+    background: var(--primary); color: #fff; border: none; cursor: pointer;
+    padding: 10px 26px; border-radius: 10px; font-size: 14.5px; font-weight: 800;
+    transition: background .2s, transform .1s; box-shadow: 0 3px 10px rgba(254,44,85,.35);
+    white-space: nowrap; flex-shrink: 0;
+  }
+  .toolbar .dl-btn:hover { background: var(--primary-dark); }
+  .toolbar .dl-btn:active { transform: scale(.97); }
 
   /* 详细流程 */
   .section { background: var(--card); border-radius: 14px; box-shadow: 0 2px 10px rgba(0,0,0,.05); padding: 24px 28px; margin-bottom: 22px; }
@@ -101,7 +104,7 @@
   .faq-item .where { display: inline-block; margin-top: 8px; font-size: 12px; font-weight: 700; color: var(--primary); background: #fff0f2; border: 1px solid #fecdd3; border-radius: 6px; padding: 3px 10px; }
 
   footer { text-align: center; color: #9ca3af; font-size: 12px; padding: 16px 0 40px; line-height: 1.8; }
-  @media (max-width: 640px) { .hero h1 { font-size: 15px; } .hero .logo { font-size: 18px; } .toolbar { gap: 10px; } .toolbar .flow .fs { font-size: 11px; padding: 2px 8px; } }
+  @media (max-width: 640px) { .hero h1 { font-size: 15px; } .hero .logo { font-size: 18px; } .toolbar { padding: 8px 12px; gap: 8px; } .toolbar .flow-title { font-size: 12px; } .toolbar .flow .fs { font-size: 11px; padding: 2px 8px; } .toolbar .dl-btn { padding: 8px 18px; font-size: 13px; } }
 </style>
 </head>
 <body>
@@ -113,14 +116,17 @@
     <div class="sub">本地安全解析 · 无水印下载 · Cookie 不出本机</div>
   </div>
   <div class="toolbar">
-    <button class="dl-btn" id="pkgBtn" onclick="downloadPackage()">⬇️ 下载工具包</button>
-    <div class="flow">
-      <span class="fs"><b>1</b> 验证 Python</span><span class="ar">→</span>
-      <span class="fs"><b>2</b> 装 yt-dlp</span><span class="ar">→</span>
-      <span class="fs"><b>3</b> 装证书<span class="mac">(Mac)</span></span><span class="ar">→</span>
-      <span class="fs"><b>4</b> 启动服务</span><span class="ar">→</span>
-      <span class="fs"><b>5</b> 打开 127.0.0.1:8765</span>
+    <div class="flow-wrap">
+      <span class="flow-title">📋 速览流程</span>
+      <div class="flow">
+        <span class="fs"><b>1</b> 验证 Python</span><span class="ar">→</span>
+        <span class="fs"><b>2</b> 装 yt-dlp</span><span class="ar">→</span>
+        <span class="fs"><b>3</b> 装证书<span class="mac">(Mac)</span></span><span class="ar">→</span>
+        <span class="fs"><b>4</b> 启动服务</span><span class="ar">→</span>
+        <span class="fs"><b>5</b> 打开 127.0.0.1:8765</span>
+      </div>
     </div>
+    <button class="dl-btn" id="pkgBtn" onclick="downloadPackage()">⬇️ 下载工具包</button>
   </div>
 </div>
 
