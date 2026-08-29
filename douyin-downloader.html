@@ -22,12 +22,12 @@
   .toolbar .flow .fs b { width: 17px; height: 17px; border-radius: 50%; background: var(--primary); color: #fff; font-size: 11px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
   .toolbar .flow .fs .mac { font-size: 9px; color: #aaa; }
   .toolbar .flow .ar { color: #d1d5db; font-size: 14px; }
-  .sec-head-sticky { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 12px 20px 10px; background: var(--card); border-bottom: 1px solid var(--border); }
-  .sec-head-sticky h2 { font-size: 17px; font-weight: 700; margin: 0; white-space: nowrap; }
-  .sec-head-sticky .tabs { display: flex; gap: 8px; flex-wrap: wrap; }
-  .sec-head-sticky .dl-btn { margin-left: auto; background: var(--primary); color: #fff; border: none; cursor: pointer; padding: 8px 22px; border-radius: 10px; font-size: 14px; font-weight: 800; box-shadow: 0 3px 10px rgba(254,44,85,.35); white-space: nowrap; }
-  .sec-head-sticky .dl-btn:hover { background: var(--primary-dark); }
-  .sec-head-sticky .dl-btn:active { transform: scale(.97); }
+  .sec-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 12px 20px 10px; background: var(--card); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 90; border-radius: 14px 14px 0 0; }
+  .sec-head h2 { font-size: 17px; font-weight: 700; margin: 0; white-space: nowrap; }
+  .sec-head .tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+  .sec-head .dl-btn { margin-left: auto; background: var(--primary); color: #fff; border: none; cursor: pointer; padding: 8px 22px; border-radius: 10px; font-size: 14px; font-weight: 800; box-shadow: 0 3px 10px rgba(254,44,85,.35); white-space: nowrap; }
+  .sec-head .dl-btn:hover { background: var(--primary-dark); }
+  .sec-head .dl-btn:active { transform: scale(.97); }
   .wrap { max-width: 880px; margin: 0 auto; padding: 16px 16px 60px; }
   .section { background: var(--card); border-radius: 14px; box-shadow: 0 2px 10px rgba(0,0,0,.05); margin-bottom: 22px; }
   .sec-body { padding: 16px 28px 24px; }
@@ -57,7 +57,7 @@
   .faq-item .a b { color: var(--text); }
   .faq-item .where { display: inline-block; margin-top: 8px; font-size: 12px; font-weight: 700; color: var(--primary); background: #fff0f2; border: 1px solid #fecdd3; border-radius: 6px; padding: 3px 10px; }
   footer { text-align: center; color: #9ca3af; font-size: 12px; padding: 16px 0 40px; line-height: 1.8; }
-  @media (max-width:640px) { .hero h1 { font-size:15px; } .toolbar { padding:8px 12px; gap:6px; } .toolbar .flow-title { font-size:12px; } .toolbar .flow .fs { font-size:11px; padding:2px 8px; } .sec-head-sticky { padding:10px 12px 8px; gap:8px; } .sec-head-sticky h2 { font-size:15px; } .sec-head-sticky .dl-btn { padding:7px 16px; font-size:12.5px; } }
+  @media (max-width:640px) { .hero h1 { font-size:15px; } .toolbar { padding:8px 12px; gap:6px; } .toolbar .flow-title { font-size:12px; } .toolbar .flow .fs { font-size:11px; padding:2px 8px; } .sec-head { padding:10px 12px 8px; gap:8px; } .sec-head h2 { font-size:15px; } .sec-head .dl-btn { padding:7px 16px; font-size:12.5px; } }
 </style>
 </head>
 <body>
@@ -83,21 +83,23 @@
       <span class="fs"><b>5</b> 打开 127.0.0.1:8765</span>
     </div>
   </div>
-  <div class="sec-head-sticky">
-    <h2>🚀 详细部署流程</h2>
-    <div class="tabs">
-      <div class="tab active" data-tab="mac">🍎 macOS</div>
-      <div class="tab" data-tab="win">🪟 Windows</div>
-    </div>
-    <button class="dl-btn" id="pkgBtn" onclick="downloadPackage()">⬇️ 下载工具包</button>
-  </div>
 </div>
 
 <div class="wrap">
-  <div class="section"><div class="sec-body">
-    <div class="panel show" id="panel-mac"></div>
-    <div class="panel" id="panel-win"></div>
-  </div></div>
+  <div class="section">
+    <div class="sec-head" id="secHead">
+      <h2>🚀 详细部署流程</h2>
+      <div class="tabs">
+        <div class="tab active" data-tab="mac">🍎 macOS</div>
+        <div class="tab" data-tab="win">🪟 Windows</div>
+      </div>
+      <button class="dl-btn" id="pkgBtn" onclick="downloadPackage()">⬇️ 下载工具包</button>
+    </div>
+    <div class="sec-body">
+      <div class="panel show" id="panel-mac"></div>
+      <div class="panel" id="panel-win"></div>
+    </div>
+  </div>
 
   <div class="section"><div class="sec-body">
     <h2 style="font-size:17px;font-weight:700;margin-bottom:16px;">❓ 常见问题</h2>
@@ -819,6 +821,15 @@ function renderSteps(p) {
   });
 }
 function toggleStep(id) { document.getElementById('step-' + id).classList.toggle('open'); }
+
+// sec-head 固定在 hero+速览 下方
+function fixSecHead() {
+  const sh = document.querySelector('.sticky-head');
+  const secHead = document.getElementById('secHead');
+  if (sh && secHead) secHead.style.top = sh.offsetHeight + 'px';
+}
+window.addEventListener('resize', fixSecHead);
+fixSecHead();
 function downloadPackage() {
   try {
     const bin = atob(PKG_B64); const bytes = new Uint8Array(bin.length);
