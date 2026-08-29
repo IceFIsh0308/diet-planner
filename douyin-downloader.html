@@ -5,122 +5,63 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>抖音视频下载器 · 部署指南</title>
 <style>
-  :root {
-    --primary: #FE2C55;
-    --primary-dark: #D92345;
-    --bg: #f7f8fa;
-    --card: #ffffff;
-    --border: #e5e7eb;
-    --text: #18191c;
-    --text-2: #6b7280;
-    --ok: #16a34a;
-  }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-    background: var(--bg); color: var(--text); line-height: 1.7;
-  }
-  /* ===== 固定头部 ===== */
+  :root { --primary: #FE2C55; --primary-dark: #D92345; --bg: #f7f8fa; --card: #fff; --border: #e5e7eb; --text: #18191c; --text-2: #6b7280; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
   .sticky-head { position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(0,0,0,.08); }
-  .hero {
-    background: linear-gradient(135deg, #FE2C55 0%, #ff6b8a 100%);
-    color: #fff; text-align: center; padding: 10px 20px 8px;
-  }
-  .hero .logo { font-size: 20px; display: inline-block; vertical-align: middle; margin-right: 8px; }
+  .hero { background: linear-gradient(135deg, #FE2C55, #ff6b8a); color: #fff; text-align: center; padding: 10px 20px 8px; }
+  .hero .logo { font-size: 20px; vertical-align: middle; margin-right: 8px; display: inline-block; }
   .hero h1 { font-size: 17px; font-weight: 800; display: inline; vertical-align: middle; }
   .hero .sub { font-size: 12px; opacity: .88; margin-top: 1px; }
   .hero .tags { margin-top: 3px; display: flex; gap: 5px; justify-content: center; flex-wrap: wrap; }
-  .hero .tag {
-    font-size: 10px; padding: 1px 9px; border-radius: 999px;
-    background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.3);
-  }
-  .wrap { max-width: 880px; margin: 0 auto; padding: 16px 16px 60px; }
-
-  /* 下载 + 速览 工具条 */
-  .toolbar {
-    background: var(--card); border-top: 1px solid rgba(255,255,255,.25);
-    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-    padding: 8px 20px;
-  }
-  /* 左侧：速览流程（保留标题） */
-  .toolbar .flow-wrap { display: flex; align-items: center; gap: 10px; }
-  .toolbar .flow-title { font-size: 13px; font-weight: 800; color: var(--text); white-space: nowrap; }
-  .toolbar .flow { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
-  .toolbar .flow .fs {
-    display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text);
-    background: #f3f4f6; border: 1px solid var(--border); border-radius: 999px; padding: 3px 10px;
-  }
-  .toolbar .flow .fs b {
-    width: 17px; height: 17px; border-radius: 50%; background: var(--primary); color: #fff;
-    font-size: 11px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
-  }
+  .hero .tag { font-size: 10px; padding: 1px 9px; border-radius: 999px; background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.3); }
+  .toolbar { background: var(--card); display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; padding: 8px 20px; }
+  .toolbar .flow-title { font-size: 13px; font-weight: 800; white-space: nowrap; }
+  .toolbar .flow { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; justify-content: center; }
+  .toolbar .flow .fs { display: flex; align-items: center; gap: 5px; font-size: 12px; background: #f3f4f6; border: 1px solid var(--border); border-radius: 999px; padding: 3px 10px; }
+  .toolbar .flow .fs b { width: 17px; height: 17px; border-radius: 50%; background: var(--primary); color: #fff; font-size: 11px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
   .toolbar .flow .fs .mac { font-size: 9px; color: #aaa; }
   .toolbar .flow .ar { color: #d1d5db; font-size: 14px; }
-
-  /* 详细流程 */
-  .section { background: var(--card); border-radius: 14px; box-shadow: 0 2px 10px rgba(0,0,0,.05); margin-bottom: 22px; }
-  .sec-head-sticky {
-    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-    padding: 12px 20px 10px;
-    background: var(--card); border-bottom: 1px solid var(--border);
-  }
-  .sec-head-sticky h2 { font-size: 17px; font-weight: 700; display: flex; align-items: center; gap: 8px; margin: 0; white-space: nowrap; }
-  .sec-head-sticky .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 0; }
-  .sec-head-sticky .dl-btn {
-    margin-left: auto;
-    background: var(--primary); color: #fff; border: none; cursor: pointer;
-    padding: 8px 22px; border-radius: 10px; font-size: 14px; font-weight: 800;
-    transition: background .2s, transform .1s; box-shadow: 0 3px 10px rgba(254,44,85,.35);
-    white-space: nowrap;
-  }
+  .sec-head-sticky { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 12px 20px 10px; background: var(--card); border-bottom: 1px solid var(--border); }
+  .sec-head-sticky h2 { font-size: 17px; font-weight: 700; margin: 0; white-space: nowrap; }
+  .sec-head-sticky .tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+  .sec-head-sticky .dl-btn { margin-left: auto; background: var(--primary); color: #fff; border: none; cursor: pointer; padding: 8px 22px; border-radius: 10px; font-size: 14px; font-weight: 800; box-shadow: 0 3px 10px rgba(254,44,85,.35); white-space: nowrap; }
   .sec-head-sticky .dl-btn:hover { background: var(--primary-dark); }
   .sec-head-sticky .dl-btn:active { transform: scale(.97); }
-  .section .sec-body { padding: 16px 28px 24px; }
-  .tab {
-    padding: 8px 22px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;
-    background: #f3f4f6; border: 1px solid var(--border); color: var(--text-2); transition: all .2s;
-  }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 16px 16px 60px; }
+  .section { background: var(--card); border-radius: 14px; box-shadow: 0 2px 10px rgba(0,0,0,.05); margin-bottom: 22px; }
+  .sec-body { padding: 16px 28px 24px; }
+  .tab { padding: 8px 22px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; background: #f3f4f6; border: 1px solid var(--border); color: var(--text-2); transition: all .2s; }
   .tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
-  .panel { display: none; }
-  .panel.show { display: block; }
-  .step { display: flex; gap: 14px; margin-bottom: 16px; }
-  .step .num {
-    flex-shrink: 0; width: 28px; height: 28px; border-radius: 8px; background: #fff0f2; color: var(--primary);
-    display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px;
-  }
-  .step .body { min-width: 0; flex: 1; }
-  .step .body .st { font-weight: 700; font-size: 14px; }
-  .step .body .desc { font-size: 13px; color: var(--text-2); margin-top: 2px; }
-  .cmd {
-    font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px;
-    background: #0f1115; color: #d7dde8; border-radius: 8px; padding: 10px 14px; margin-top: 8px;
-    position: relative; overflow-x: auto; white-space: pre-wrap; word-break: break-all;
-  }
-  .cmd .copy {
-    position: absolute; top: 7px; right: 8px; cursor: pointer; font-family: inherit; font-size: 11px;
-    color: #9aa3b2; background: #1c2027; border: 1px solid #2c313b; padding: 2px 10px; border-radius: 6px;
-  }
+  .panel { display: none; } .panel.show { display: block; }
+  .step { margin-bottom: 10px; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .step .step-head { display: flex; align-items: center; gap: 10px; padding: 10px 14px; cursor: pointer; user-select: none; background: #fafbfc; }
+  .step .step-head:hover { background: #f3f4f6; }
+  .step .num { flex-shrink: 0; width: 26px; height: 26px; border-radius: 8px; background: #fff0f2; color: var(--primary); display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; }
+  .step .st { font-weight: 700; font-size: 14px; flex: 1; }
+  .step .toggle-icon { font-size: 14px; color: var(--text-2); transition: transform .2s; }
+  .step.open .toggle-icon { transform: rotate(90deg); }
+  .step .step-content { display: none; padding: 12px 14px 14px 50px; }
+  .step.open .step-content { display: block; }
+  .step .desc { font-size: 13px; color: var(--text-2); }
+  .cmd { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; background: #0f1115; color: #d7dde8; border-radius: 8px; padding: 10px 14px; margin-top: 8px; position: relative; overflow-x: auto; white-space: pre-wrap; word-break: break-all; }
+  .cmd .copy { position: absolute; top: 7px; right: 8px; cursor: pointer; font-family: inherit; font-size: 11px; color: #9aa3b2; background: #1c2027; border: 1px solid #2c313b; padding: 2px 10px; border-radius: 6px; }
   .cmd .copy:hover { color: #fff; border-color: var(--primary); }
-  .warn { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; border-radius: 8px; padding: 10px 14px; font-size: 12.5px; margin-top: 8px; }
   .ok-box { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; border-radius: 8px; padding: 10px 14px; font-size: 12.5px; margin-top: 8px; }
   .tip { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; border-radius: 8px; padding: 10px 14px; font-size: 12.5px; margin-top: 8px; }
   .trouble { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; border-radius: 8px; padding: 10px 14px; font-size: 12.5px; margin-top: 8px; }
   .trouble b { color: #dc2626; }
-
-  /* FAQ */
   .faq-item { margin-bottom: 16px; padding: 14px 16px; background: #fafbfc; border: 1px solid var(--border); border-radius: 10px; }
   .faq-item .q { font-weight: 700; font-size: 14px; }
   .faq-item .a { font-size: 13px; color: var(--text-2); margin-top: 4px; }
   .faq-item .a b { color: var(--text); }
   .faq-item .where { display: inline-block; margin-top: 8px; font-size: 12px; font-weight: 700; color: var(--primary); background: #fff0f2; border: 1px solid #fecdd3; border-radius: 6px; padding: 3px 10px; }
-
   footer { text-align: center; color: #9ca3af; font-size: 12px; padding: 16px 0 40px; line-height: 1.8; }
-  @media (max-width: 640px) { .hero h1 { font-size: 15px; } .hero .logo { font-size: 18px; } .toolbar { padding: 8px 12px; gap: 8px; } .toolbar .flow-title { font-size: 12px; } .toolbar .flow .fs { font-size: 11px; padding: 2px 8px; } .sec-head-sticky { padding: 10px 12px 8px; gap: 8px; } .sec-head-sticky h2 { font-size: 15px; } .sec-head-sticky .dl-btn { padding: 7px 16px; font-size: 12.5px; } }
+  @media (max-width:640px) { .hero h1 { font-size:15px; } .toolbar { padding:8px 12px; gap:6px; } .toolbar .flow-title { font-size:12px; } .toolbar .flow .fs { font-size:11px; padding:2px 8px; } .sec-head-sticky { padding:10px 12px 8px; gap:8px; } .sec-head-sticky h2 { font-size:15px; } .sec-head-sticky .dl-btn { padding:7px 16px; font-size:12.5px; } }
 </style>
 </head>
 <body>
-
-<!-- 固定头部：标题 + 下载按钮 + 速览流程 -->
+<!-- ===== 固定头部 ===== -->
 <div class="sticky-head">
   <div class="hero">
     <span class="logo">🎬</span><h1>抖音视频下载器 · 部署指南</h1>
@@ -133,18 +74,15 @@
     </div>
   </div>
   <div class="toolbar">
-    <div class="flow-wrap">
-      <span class="flow-title">📋 速览流程</span>
-      <div class="flow">
-        <span class="fs"><b>1</b> 验证 Python</span><span class="ar">→</span>
-        <span class="fs"><b>2</b> 装 yt-dlp</span><span class="ar">→</span>
-        <span class="fs"><b>3</b> 装证书<span class="mac">(Mac)</span></span><span class="ar">→</span>
-        <span class="fs"><b>4</b> 启动服务</span><span class="ar">→</span>
-        <span class="fs"><b>5</b> 打开 127.0.0.1:8765</span>
-      </div>
+    <span class="flow-title">📋 速览流程</span>
+    <div class="flow">
+      <span class="fs"><b>1</b> 验证 Python</span><span class="ar">→</span>
+      <span class="fs"><b>2</b> 装 yt-dlp</span><span class="ar">→</span>
+      <span class="fs"><b>3</b> 装证书<span class="mac">(Mac)</span></span><span class="ar">→</span>
+      <span class="fs"><b>4</b> 启动服务</span><span class="ar">→</span>
+      <span class="fs"><b>5</b> 打开 127.0.0.1:8765</span>
     </div>
   </div>
-  <!-- 详细流程标题行（含下载按钮）也固定 -->
   <div class="sec-head-sticky">
     <h2>🚀 详细部署流程</h2>
     <div class="tabs">
@@ -156,146 +94,20 @@
 </div>
 
 <div class="wrap">
+  <div class="section"><div class="sec-body">
+    <div class="panel show" id="panel-mac"></div>
+    <div class="panel" id="panel-win"></div>
+  </div></div>
 
-  <!-- 详细流程 -->
-  <div class="section">
-    <div class="sec-body">
-
-    <!-- Mac -->
-    <div class="panel show" id="panel-mac">
-      <div class="step"><div class="num">1</div><div class="body"><div class="st">验证 Python 3</div><div class="desc">找到「终端」：按 <b>Command(⌘) + 空格</b>，输入「终端」，按回车打开。然后复制下面命令粘贴进去，按回车：</div>
-        <div class="cmd">python3 --version<button class="copy">复制</button></div>
-        <div class="ok-box">✅ 显示类似 <b>Python 3.13.x</b> → 说明已安装，直接进入<b>第 2 步</b>。</div>
-        <div class="trouble">❌ 提示 <b>command not found: python3</b> → 说明没装 Python。先安装：<br/><br/><b>xcode-select --install</b><br/><br/>弹出窗口点「安装」，等它跑完（可能要几分钟），完成后<b>回到第 1 步重试</b>。</div>
-        <div class="trouble">❌ 装了还是找不到？→ 前往 <b>python.org</b> 下载 Python 3.13+ 安装包，双击安装（一路点继续），装完<b>回到第 1 步重试</b>。</div>
-      </div></div>
-      <div class="step"><div class="num">2</div><div class="body"><div class="st">安装 yt-dlp</div><div class="desc">yt-dlp 是视频解析的核心库。在同一个终端窗口粘贴执行：</div>
-        <div class="cmd">python3 -m pip install yt-dlp<button class="copy">复制</button></div>
-        <div class="ok-box">✅ 显示 <b>Successfully installed yt-dlp-xxx</b> → 进入<b>第 3 步</b>。</div>
-        <div class="trouble">❌ 报错 <b>externally-managed-environment</b> → 改用下面这条再执行一次：<br/><br/><b>python3 -m pip install yt-dlp --break-system-packages</b><br/><br/>看到 Successfully installed → 进入<b>第 3 步</b>。</div>
-        <div class="trouble">❌ 报 <b>SSL: CERTIFICATE_VERIFY_FAILED</b>（安装时下载失败）→ 先去完成<b>第 3 步</b>装证书，装完<b>回到第 2 步</b>重装。</div>
-        <div class="trouble">❌ 提示 <b>No module named pip</b> → 先执行 <b>python3 -m ensurepip --upgrade</b>，然后<b>回到第 2 步重试</b>。</div>
-      </div></div>
-      <div class="step"><div class="num">3</div><div class="body"><div class="st">安装 SSL 证书（仅 Mac 需要，必须做）</div><div class="desc">Mac 的 Python 默认证书库是空的，不装这一步，下载时一定会报 SSL 错误。先确认 Python 版本目录：</div>
-        <div class="cmd">ls /Applications | grep Python<button class="copy">复制</button></div>
-        <div class="desc">看输出是 <b>Python 3.13</b> 还是别的，然后执行对应的证书脚本（以 3.13 为例）：</div>
-        <div class="cmd">"/Applications/Python 3.13/Install Certificates.command"<button class="copy">复制</button></div>
-        <div class="ok-box">✅ 最后一行显示 <b>update complete</b> → 进入<b>第 4 步</b>。此步只需做一次，以后不用再做。</div>
-        <div class="trouble">❌ 提示 <b>No such file or directory</b> → 说明路径名不对。把第 3 步第一行命令的结果发给我，确认正确的版本目录名后再执行。</div>
-      </div></div>
-      <div class="step"><div class="num">4</div><div class="body"><div class="st">下载并解压工具包</div><div class="desc">点击页面上方绿色按钮「⬇️ 下载完整工具包」，得到 <b>抖音视频解析.zip</b>。<br/>双击 zip 解压，得到「抖音视频解析」文件夹。把它<b>移动</b>到「下载」文件夹（位置自己记好，下一步要用）。</div>
-        <div class="tip">💡 如果你已经把文件夹放在别的位置，记住完整路径即可，下一步的命令相应修改。</div>
-      </div></div>
-      <div class="step"><div class="num">5</div><div class="body"><div class="st">启动服务</div><div class="desc">在终端输入下面命令（如果文件夹在别的位置，把 <code>~/Downloads/抖音视频解析</code> 换成你的实际路径）：</div>
-        <div class="cmd">cd ~/Downloads/抖音视频解析 && python3 server.py<button class="copy">复制</button></div>
-        <div class="ok-box">✅ 看到 <b>🌐 打开浏览器访问: http://127.0.0.1:8765/</b> → 进入<b>第 6 步</b>。终端窗口<b>不要关闭</b>，关了就停了。</div>
-        <div class="trouble">❌ 提示 <b>cd: no such file or directory</b> → 路径不对。用下面命令先找到文件夹在哪，再重新进入第 5 步：<br/><br/><b>mdfind "kMDItemDisplayName == '*抖音*'"</b></div>
-        <div class="trouble">❌ 提示 <b>❌ 未检测到 yt-dlp</b> → 第 2 步没装成功，<b>回到第 2 步</b>重新安装。</div>
-        <div class="trouble">❌ 报 <b>Address already in use</b> → 服务已经在运行了（可能之前开过），跳过启动，直接<b>进入第 6 步</b>，或者先按 Ctrl+C 停掉旧的再启动。</div>
-      </div></div>
-      <div class="step"><div class="num">6</div><div class="body"><div class="st">浏览器打开使用</div><div class="desc">打开你平时用的浏览器（Chrome / Safari / Edge），地址栏输入：</div>
-        <div class="cmd">http://127.0.0.1:8765/<button class="copy">复制</button></div>
-        <div class="desc">然后：① 抖音 App 打开视频 → 分享 → 复制链接 ② 粘贴到页面 ③ 选登录抖音的浏览器 ④ 点「解析并下载」</div>
-        <div class="trouble">❌ 提示 <b>cookie 读取失败</b> → 见下方常见问题 <b>Q3</b>，改用手动 Cookie 模式后回到本步重试。</div>
-        <div class="trouble">❌ 报 <b>SSL: CERTIFICATE_VERIFY_FAILED</b> → 第 3 步没做或没成功，<b>回到第 3 步</b>装证书，再回来。</div>
-      </div></div>
-    </div>
-
-    <!-- Win -->
-    <div class="panel" id="panel-win">
-      <div class="step"><div class="num">1</div><div class="body"><div class="st">验证 Python 3</div><div class="desc">打开「命令提示符」：按 <b>Win + R</b>，输入 <b>cmd</b>，按回车。然后复制下面命令粘贴进去，按回车：</div>
-        <div class="cmd">python --version<button class="copy">复制</button></div>
-        <div class="ok-box">✅ 显示类似 <b>Python 3.13.x</b> → 说明已安装，直接进入<b>第 2 步</b>。</div>
-        <div class="trouble">❌ 提示 <b>不是内部或外部命令</b> → 说明没装 Python 或没加到 PATH：<br/><br/>① 前往 <b>python.org</b> 下载 Python 3.13+（Windows 安装包）<br/>② 双击安装，<b>务必勾选「Add Python to PATH」</b>（界面最下方）<br/>③ 安装完成后<b>关掉 cmd 重新打开</b><br/>④ <b>回到第 1 步重试</b></div>
-      </div></div>
-      <div class="step"><div class="num">2</div><div class="body"><div class="st">安装 yt-dlp</div><div class="desc">在同一个 cmd 窗口粘贴执行：</div>
-        <div class="cmd">python -m pip install yt-dlp<button class="copy">复制</button></div>
-        <div class="ok-box">✅ 显示 <b>Successfully installed yt-dlp-xxx</b> → 进入<b>第 3 步</b>。<br/>Windows 不需要装 SSL 证书，Python 自带。</div>
-        <div class="trouble">❌ 提示 <b>不是内部或外部命令</b> → 说明 Python 没加到 PATH，<b>回到第 1 步</b>检查安装时是否勾选「Add Python to PATH」。</div>
-        <div class="trouble">❌ 报 <b>No module named pip</b> → 先执行 <b>python -m ensurepip --upgrade</b>，然后<b>回到第 2 步重试</b>。</div>
-        <div class="trouble">❌ 报 <b>SSL</b> 相关错误 → 多为网络/代理问题，稍后重试或切换网络后<b>回到第 2 步</b>。</div>
-      </div></div>
-      <div class="step"><div class="num">3</div><div class="body"><div class="st">下载并解压工具包</div><div class="desc">点击页面上方绿色按钮「⬇️ 下载完整工具包」，得到 <b>抖音视频解析.zip</b>。<br/>右键 zip → 「全部解压缩」，得到「抖音视频解析」文件夹。推荐放到「下载」文件夹。</div>
-        <div class="tip">💡 记住你放的位置，下一步命令要用到。</div>
-      </div></div>
-      <div class="step"><div class="num">4</div><div class="body"><div class="st">启动服务</div><div class="desc">在 cmd 窗口输入下面命令（默认在「下载」文件夹，如位置不同请替换路径）：</div>
-        <div class="cmd">cd %USERPROFILE%\Downloads\抖音视频解析 && python server.py<button class="copy">复制</button></div>
-        <div class="ok-box">✅ 看到 <b>🌐 打开浏览器访问: http://127.0.0.1:8765/</b> → 进入<b>第 5 步</b>。cmd 窗口<b>不要关闭</b>。</div>
-        <div class="trouble">❌ 提示 <b>系统找不到指定的路径</b> → 路径不对。打开「此电脑」找到「抖音视频解析」文件夹，右键 → 复制路径，然后回到第 4 步把路径替换进去。</div>
-        <div class="trouble">❌ 提示 <b>❌ 未检测到 yt-dlp</b> → 第 2 步没装成功，<b>回到第 2 步</b>。</div>
-        <div class="trouble">❌ 报 <b>Address already in use</b> → 服务已在运行，直接<b>进入第 5 步</b>。</div>
-      </div></div>
-      <div class="step"><div class="num">5</div><div class="body"><div class="st">浏览器打开使用</div><div class="desc">打开浏览器（Chrome / Edge），地址栏输入：</div>
-        <div class="cmd">http://127.0.0.1:8765/<button class="copy">复制</button></div>
-        <div class="desc">然后：① 抖音 App 打开视频 → 分享 → 复制链接 ② 粘贴到页面 ③ 选登录抖音的浏览器 ④ 点「解析并下载」</div>
-        <div class="trouble">❌ 提示 <b>cookie 读取失败</b> → 见下方常见问题 <b>Q3</b>，改用手动 Cookie 模式后回到本步重试。</div>
-      </div></div>
-    </div>
-  </div>
-
-  <!-- 常见问题 -->
-  <div class="section">
-    <h2>❓ 常见问题</h2>
-
-    <div class="faq-item"><div class="q">Q1 · pip: command not found（找不到 pip）？</div><div class="a">
-      <b>Mac：</b>系统没有 <code>pip</code> 命令，用 <code>python3 -m pip</code> 代替（教程里已是这种写法，直接复制即可）。<br/>
-      <b>Windows：</b>多半是装 Python 时没勾「Add Python to PATH」。重装时务必勾选，装完关掉 cmd 重开。</div>
-      <span class="where">解决后回到：Mac 第2步 / Windows 第2步</span>
-    </div>
-
-    <div class="faq-item"><div class="q">Q2 · 报 SSL: CERTIFICATE_VERIFY_FAILED（证书验证失败）？</div><div class="a">
-      <b>仅 Mac 会出现</b>。原因是 Mac 的 Python 证书库是空的。运行 macOS 详细流程<b>第 3 步</b>的证书脚本
-      <code>Install Certificates.command</code>，看到 <code>update complete</code> 即成功。<br/>
-      <b>Windows 不会出现</b>此错误，Python 自带证书。</div>
-      <span class="where">解决后回到：Mac 第2步（重装 yt-dlp）或 第6步（如果只是下载报错）</span>
-    </div>
-
-    <div class="faq-item"><div class="q">Q3 · 提示 cookie 读取失败（读取浏览器登录态失败）？</div><div class="a">
-      自动读取浏览器登录态失败时，改用页面里的「手动 Cookie」模式：<br/>
-      ① Chrome 安装插件 <b>Get cookies.txt LOCALLY</b><br/>
-      ② 打开抖音网页版并登录<br/>
-      ③ 点插件 → Export → 复制内容<br/>
-      ④ 粘贴到下载器页面「手动 Cookie」文本框 → 再点下载</div>
-      <span class="where">解决后回到：Mac 第6步 / Windows 第5步（重新下载）</span>
-    </div>
-
-    <div class="faq-item"><div class="q">Q4 · 下载太慢 / 超时（180秒）？</div><div class="a">
-      多为网络波动或代理干扰。先<b>重试一次</b>；若仍超时，检查电脑是否开了代理/VPN（抖音直连更快），关掉代理再试。<br/>
-      特别慢的视频文件（几分钟的长视频）建议稍后再试，或避开晚高峰。</div>
-      <span class="where">解决后回到：Mac 第6步 / Windows 第5步（重新下载）</span>
-    </div>
-
-    <div class="faq-item"><div class="q">Q5 · 提示「下载完成但未找到输出文件」？</div><div class="a">
-      视频实际下载到了 <code>下载</code> 文件夹但程序没认出来。直接打开 <code>抖音视频解析/下载/</code> 目录查看最新文件，通常已在那。<br/>
-      也可能是下载失败只生成了临时文件，删除「下载」目录里的 0 字节/小文件后重试。</div>
-      <span class="where">解决后回到：Mac 第6步 / Windows 第5步（重新下载）</span>
-    </div>
-
-    <div class="faq-item"><div class="q">Q6 · 下载提示「不支持此视频」或解析失败？</div><div class="a">
-      可能是视频是直播回放/付费内容/已删除，或链接过期。换一条能正常播放的抖音链接重试。<br/>
-      另外确认链接格式是 <code>v.douyin.com/xxx</code> 或 <code>www.douyin.com/video/xxx</code>，从 App 里「分享 → 复制链接」最保险。</div>
-      <span class="where">解决后回到：Mac 第6步 / Windows 第5步（重新下载）</span>
-    </div>
-
-    <div class="faq-item"><div class="q">Q7 · 端口被占用（Address already in use）？</div><div class="a">
-      说明服务已经启动过（可能之前开过没关）。直接浏览器打开 <code>http://127.0.0.1:8765/</code> 试试能不能用。<br/>
-      如果打不开，把之前所有终端窗口里的服务都按 <b>Ctrl+C</b> 停掉，重新执行启动命令。</div>
-      <span class="where">解决后回到：Mac 第6步 / Windows 第5步</span>
-    </div>
-
-    <div class="faq-item"><div class="q">Q8 · 换电脑了怎么迁移？</div><div class="a">
-      <b>文件夹即拷即用</b>：把「抖音视频解析」文件夹整体拷到新电脑（U盘/网盘都行），已下载的视频也在里面。<br/>
-      <b>环境要重装</b>：新电脑需重新安装 Python 3、yt-dlp，Mac 还要再跑一次证书脚本（对应本页 macOS 第 1/2/3 步）。<br/>
-      更完整的迁移清单见工具包内「使用指南.docx」。</div>
-      <span class="where">解决后回到：新电脑上从对应平台的第1步开始</span>
-    </div>
-  </div>
+  <div class="section"><div class="sec-body">
+    <h2 style="font-size:17px;font-weight:700;margin-bottom:16px;">❓ 常见问题</h2>
+    <div id="faq-container"></div>
+  </div></div>
 
   <footer>
     工具仅在本机运行：Cookie 与视频数据不离开你的电脑。<br/>
     仅限个人学习研究使用，请勿商用或二次传播他人作品。
   </footer>
-
 </div>
 
 <script>
@@ -934,25 +746,91 @@ const PKG_B64 = "UEsDBBQAAAAIAHywHV1wiJK/OA0AAC0mAAAJAAAAc2VydmVyLnB57Vrrc9NWFv/
   + "EBoDAAD4BQAAFQAAAAAAAAAAAAAAtIFiIAAA6Kej5p6Q5oqW6Z+z6KeG6aKRLnB5UEsBAhQDFAAAAAgAbKQdXSK6T+JyAwAAZQUA"
   + "AAkAAAAAAAAAAAAAALSBryMAAFJFQURNRS5tZFBLAQIUAxQAAAgIAO2oHV00DtzEH5EAAJqaAAARAAAAAAAAAAAAAAC0gUgnAADk"
   + "vb/nlKjmjIfljZcuZG9jeFBLBQYAAAAABQAFADgBAACWuAAAAAA=";
-
+const steps = {
+  mac: [
+    { t:"验证 Python 3", d:'找到「终端」：按 <b>Command(⌘) + 空格</b>，输入「终端」，按回车打开。复制下面命令粘贴进去，按回车：',
+      c:"python3 --version", ok:'✅ 显示类似 <b>Python 3.13.x</b> → 说明已安装，直接进入<b>第 2 步</b>。',
+      tr:['<b>command not found: python3</b> → 没装 Python。先安装：<b>xcode-select --install</b>，弹出窗口点「安装」，等它跑完，完成后<b>回到第 1 步重试</b>。','装了还是找不到？→ 前往 <b>python.org</b> 下载 Python 3.13+ 安装包，双击安装，装完<b>回到第 1 步重试</b>。'] },
+    { t:"安装 yt-dlp", d:'yt-dlp 是视频解析的核心库。在同一个终端窗口粘贴执行：',
+      c:"python3 -m pip install yt-dlp", ok:'✅ 显示 <b>Successfully installed yt-dlp-xxx</b> → 进入<b>第 3 步</b>。',
+      tr:['报错 <b>externally-managed-environment</b> → 改用：<b>python3 -m pip install yt-dlp --break-system-packages</b>，看到 Successfully installed → 进入第 3 步。','报 <b>SSL: CERTIFICATE_VERIFY_FAILED</b> → 先去完成<b>第 3 步</b>装证书，装完<b>回到第 2 步</b>重装。','提示 <b>No module named pip</b> → 先执行 <b>python3 -m ensurepip --upgrade</b>，然后<b>回到第 2 步重试</b>。'] },
+    { t:"安装 SSL 证书（仅 Mac，必须做）", d:'Mac 的 Python 默认证书库是空的，不装这步下载时一定报 SSL 错误。先确认 Python 版本目录：',
+      c:"ls /Applications | grep Python", c2:'"/Applications/Python 3.13/Install Certificates.command"', c2d:'看输出是 <b>Python 3.13</b> 还是别的，然后执行对应的证书脚本（以 3.13 为例）：',
+      ok:'✅ 最后一行显示 <b>update complete</b> → 进入<b>第 4 步</b>。此步只需做一次。',
+      tr:['提示 <b>No such file or directory</b> → 路径名不对。把第 3 步第一行命令的结果发给我，确认正确的版本目录名后再执行。'] },
+    { t:"下载并解压工具包", d:'点击页面上方红色按钮「⬇️ 下载工具包」，得到 <b>抖音视频解析.zip</b>。双击 zip 解压，得到「抖音视频解析」文件夹。把它<b>移动</b>到「下载」文件夹。',
+      tip:'💡 如果你已经把文件夹放在别的位置，记住完整路径即可，下一步的命令相应修改。' },
+    { t:"启动服务", d:'在终端输入下面命令（如果文件夹在别的位置，把 <code>~/Downloads/抖音视频解析</code> 换成你的实际路径）：',
+      c:"cd ~/Downloads/抖音视频解析 && python3 server.py", ok:'✅ 看到 <b>🌐 打开浏览器访问: http://127.0.0.1:8765/</b> → 进入<b>第 6 步</b>。终端窗口<b>不要关闭</b>。',
+      tr:['提示 <b>cd: no such file or directory</b> → 路径不对。用 <b>mdfind "kMDItemDisplayName == \'*抖音*\'"</b> 找到文件夹，再重新进入第 5 步。','提示 <b>❌ 未检测到 yt-dlp</b> → 第 2 步没装成功，<b>回到第 2 步</b>。','报 <b>Address already in use</b> → 服务已在运行，直接<b>进入第 6 步</b>，或先按 Ctrl+C 停掉旧的再启动。'] },
+    { t:"浏览器打开使用", d:'打开你平时用的浏览器（Chrome / Safari / Edge），地址栏输入：',
+      c:"http://127.0.0.1:8765/", d2:'然后：① 抖音 App 打开视频 → 分享 → 复制链接 ② 粘贴到页面 ③ 选登录抖音的浏览器 ④ 点「解析并下载」',
+      tr:['提示 <b>cookie 读取失败</b> → 见下方常见问题 <b>Q3</b>，改用手动 Cookie 模式后回到本步重试。','报 <b>SSL: CERTIFICATE_VERIFY_FAILED</b> → 第 3 步没做或没成功，<b>回到第 3 步</b>装证书，再回来。'] }
+  ],
+  win: [
+    { t:"验证 Python 3", d:'打开「命令提示符」：按 <b>Win + R</b>，输入 <b>cmd</b>，按回车。复制下面命令粘贴进去，按回车：',
+      c:"python --version", ok:'✅ 显示类似 <b>Python 3.13.x</b> → 说明已安装，直接进入<b>第 2 步</b>。',
+      tr:['提示 <b>不是内部或外部命令</b> → 没装 Python 或没加到 PATH：① 前往 <b>python.org</b> 下载 Python 3.13+ ② 双击安装，<b>务必勾选「Add Python to PATH」</b> ③ 安装完成后<b>关掉 cmd 重新打开</b> ④ <b>回到第 1 步重试</b>'] },
+    { t:"安装 yt-dlp", d:'在同一个 cmd 窗口粘贴执行：',
+      c:"python -m pip install yt-dlp", ok:'✅ 显示 <b>Successfully installed yt-dlp-xxx</b> → 进入<b>第 3 步</b>。<br/>Windows 不需要装 SSL 证书，Python 自带。',
+      tr:['提示 <b>不是内部或外部命令</b> → Python 没加到 PATH，<b>回到第 1 步</b>检查。','报 <b>No module named pip</b> → 先执行 <b>python -m ensurepip --upgrade</b>，然后<b>回到第 2 步重试</b>。','报 <b>SSL</b> 相关错误 → 多为网络/代理问题，稍后重试或切换网络后<b>回到第 2 步</b>。'] },
+    { t:"下载并解压工具包", d:'点击页面上方红色按钮「⬇️ 下载工具包」，得到 <b>抖音视频解析.zip</b>。右键 zip → 「全部解压缩」，得到「抖音视频解析」文件夹。推荐放到「下载」文件夹。',
+      tip:'💡 记住你放的位置，下一步命令要用到。' },
+    { t:"启动服务", d:'在 cmd 窗口输入下面命令（默认在「下载」文件夹，如位置不同请替换路径）：',
+      c:'cd %USERPROFILE%\\Downloads\\抖音视频解析 && python server.py', ok:'✅ 看到 <b>🌐 打开浏览器访问: http://127.0.0.1:8765/</b> → 进入<b>第 5 步</b>。cmd 窗口<b>不要关闭</b>。',
+      tr:['提示 <b>系统找不到指定的路径</b> → 打开「此电脑」找到文件夹，右键 → 复制路径，回到第 4 步替换路径。','提示 <b>❌ 未检测到 yt-dlp</b> → 第 2 步没装成功，<b>回到第 2 步</b>。','报 <b>Address already in use</b> → 服务已在运行，直接<b>进入第 5 步</b>。'] },
+    { t:"浏览器打开使用", d:'打开浏览器（Chrome / Edge），地址栏输入：',
+      c:"http://127.0.0.1:8765/", d2:'然后：① 抖音 App 打开视频 → 分享 → 复制链接 ② 粘贴到页面 ③ 选登录抖音的浏览器 ④ 点「解析并下载」',
+      tr:['提示 <b>cookie 读取失败</b> → 见下方常见问题 <b>Q3</b>，改用手动 Cookie 模式后回到本步重试。'] }
+  ]
+};
+const faqs = [
+  {q:"Q1 · pip: command not found（找不到 pip）？",a:'<b>Mac：</b>用 <code>python3 -m pip</code> 代替（教程里已是这种写法）。<br/><b>Windows：</b>多半是装 Python 时没勾「Add Python to PATH」。重装时务必勾选，装完关掉 cmd 重开。',w:'Mac 第2步 / Windows 第2步'},
+  {q:"Q2 · 报 SSL: CERTIFICATE_VERIFY_FAILED（证书验证失败）？",a:'<b>仅 Mac 会出现</b>。运行 macOS 详细流程<b>第 3 步</b>的证书脚本 <code>Install Certificates.command</code>，看到 <code>update complete</code> 即成功。<br/><b>Windows 不会出现</b>此错误。',w:'Mac 第2步（重装）或 第6步（下载报错）'},
+  {q:"Q3 · 提示 cookie 读取失败？",a:'改用页面里的「手动 Cookie」模式：① Chrome 安装插件 <b>Get cookies.txt LOCALLY</b> ② 打开抖音网页版并登录 ③ 点插件 → Export → 复制内容 ④ 粘贴到下载器页面「手动 Cookie」文本框 → 再点下载',w:'Mac 第6步 / Windows 第5步（重新下载）'},
+  {q:"Q4 · 下载太慢 / 超时（180秒）？",a:'多为网络波动或代理干扰。先<b>重试一次</b>；若仍超时，检查电脑是否开了代理/VPN（抖音直连更快），关掉代理再试。',w:'Mac 第6步 / Windows 第5步（重新下载）'},
+  {q:"Q5 · 提示「下载完成但未找到输出文件」？",a:'直接打开 <code>抖音视频解析/下载/</code> 目录查看最新文件，通常已在那。也可能是下载失败只生成了临时文件，删除 0 字节/小文件后重试。',w:'Mac 第6步 / Windows 第5步（重新下载）'},
+  {q:"Q6 · 下载提示「不支持此视频」或解析失败？",a:'可能是直播回放/付费内容/已删除，或链接过期。换一条能正常播放的抖音链接重试。确认链接格式是 <code>v.douyin.com/xxx</code> 或 <code>www.douyin.com/video/xxx</code>，从 App「分享 → 复制链接」最保险。',w:'Mac 第6步 / Windows 第5步（重新下载）'},
+  {q:"Q7 · 端口被占用（Address already in use）？",a:'服务已经启动过。直接浏览器打开 <code>http://127.0.0.1:8765/</code> 试试。如果打不开，把之前所有终端窗口里的服务都按 <b>Ctrl+C</b> 停掉，重新执行启动命令。',w:'Mac 第6步 / Windows 第5步'},
+  {q:"Q8 · 换电脑了怎么迁移？",a:'<b>文件夹即拷即用</b>：整体拷到新电脑。<b>环境要重装</b>：新电脑需重新安装 Python 3、yt-dlp，Mac 还要再跑一次证书脚本。更完整的迁移清单见工具包内「使用指南.docx」。',w:'新电脑从对应平台第1步开始'}
+];
+function renderSteps(p) {
+  const panel = document.getElementById('panel-' + p);
+  panel.innerHTML = steps[p].map((s, i) => {
+    let h = `<div class="step${i===0?' open':''}" id="step-${p}-${i}"><div class="step-head" onclick="toggleStep('${p}-${i}')"><div class="num">${i+1}</div><div class="st">${s.t}</div><div class="toggle-icon">▶</div></div><div class="step-content">`;
+    if (s.d) h += `<div class="desc">${s.d}</div>`;
+    if (s.c) h += `<div class="cmd">${s.c}<button class="copy">复制</button></div>`;
+    if (s.c2d) h += `<div class="desc" style="margin-top:8px">${s.c2d}</div>`;
+    if (s.c2) h += `<div class="cmd">${s.c2}<button class="copy">复制</button></div>`;
+    if (s.d2) h += `<div class="desc" style="margin-top:8px">${s.d2}</div>`;
+    if (s.ok) h += `<div class="ok-box">${s.ok}</div>`;
+    if (s.tip) h += `<div class="tip">${s.tip}</div>`;
+    if (s.tr) s.tr.forEach(t => h += `<div class="trouble">❌ ${t}</div>`);
+    h += `</div></div>`;
+    return h;
+  }).join('');
+  panel.querySelectorAll('.cmd .copy').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      navigator.clipboard.writeText(btn.parentNode.childNodes[0].textContent.trim()).then(() => {
+        const o = btn.textContent; btn.textContent = '✓ 已复制'; setTimeout(() => btn.textContent = o, 1500);
+      });
+    });
+  });
+}
+function toggleStep(id) { document.getElementById('step-' + id).classList.toggle('open'); }
 function downloadPackage() {
   try {
-    const bin = atob(PKG_B64);
-    const bytes = new Uint8Array(bin.length);
+    const bin = atob(PKG_B64); const bytes = new Uint8Array(bin.length);
     for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-    const blob = new Blob([bytes], { type: 'application/zip' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = '抖音视频解析.zip';
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    const blob = new Blob([bytes], {type:'application/zip'}); const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = '抖音视频解析.zip';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
     const btn = document.getElementById('pkgBtn');
     btn.textContent = '✓ 下载已触发，检查浏览器下载列表';
-    setTimeout(function(){ btn.textContent = '⬇️ 下载完整工具包 (zip)'; }, 3000);
+    setTimeout(() => btn.textContent = '⬇️ 下载工具包', 3000);
   } catch(e) { alert('下载失败: ' + e.message); }
 }
-
-// Tab 切换
 document.querySelectorAll('.tab').forEach(tab => {
   tab.addEventListener('click', () => {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -961,18 +839,11 @@ document.querySelectorAll('.tab').forEach(tab => {
     document.getElementById('panel-' + tab.dataset.tab).classList.add('show');
   });
 });
-
-// 一键复制
-document.querySelectorAll('.cmd .copy').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const code = btn.parentNode.childNodes[0].textContent.trim();
-    navigator.clipboard.writeText(code).then(() => {
-      const old = btn.textContent;
-      btn.textContent = '✓ 已复制';
-      setTimeout(() => { btn.textContent = old; }, 1500);
-    });
-  });
-});
+document.getElementById('faq-container').innerHTML = faqs.map(f =>
+  `<div class="faq-item"><div class="q">${f.q}</div><div class="a">${f.a}</div><span class="where">解决后回到：${f.w}</span></div>`
+).join('');
+renderSteps('mac');
+renderSteps('win');
 </script>
 </body>
 </html>
