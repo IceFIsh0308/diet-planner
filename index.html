@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
-    <title>智能饮食规划器 V2.2</title>
+    <title>智能饮食规划器 V2.4</title>
     <!-- SheetJS CDN — 用于XLSX多sheet导入导出 -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <!-- Supabase JS SDK v2 -->
@@ -597,7 +597,7 @@
 </div>
 
 <div class="toast" id="toast"></div>
-<div style="position:fixed;bottom:4px;right:8px;font-size:10px;color:#ccc;pointer-events:none;">V2.2</div>
+<div style="position:fixed;bottom:4px;right:8px;font-size:10px;color:#ccc;pointer-events:none;">V2.4</div>
 
 <script>
     // ============================================================
@@ -844,6 +844,7 @@
                         dailyData[profileId][m.date][m.meal_key] = dailyData[profileId][m.date][m.meal_key] || [];
                         dailyData[profileId][m.date][m.meal_key].push({
                             id: m.food_id, name: m.food_name, weight: m.weight, unit: m.unit,
+                            quantity: m.quantity || ((m.unit === '个' || m.unit === '份') ? Math.max(1, Math.round(m.weight / (m.unit_weight || 50))) : m.weight),
                             calories: m.calories, protein: m.protein, carbs: m.carbs, fat: m.fat,
                             _dbId: m.id
                         });
@@ -1069,11 +1070,11 @@
     //  食材库（预设）— 与V8完全一致
     // ============================================================
     const PRESET_FOODS = [
-        { id: 'chicken_breast', name: '鸡胸肉', calories: 165, protein: 31, carbs: 0, fat: 3.6, defaultUnit: '克', unitWeight: 100, unitType: '克' },
-        { id: 'chicken_leg', name: '鸡腿肉（去皮）', calories: 130, protein: 20, carbs: 0, fat: 5, defaultUnit: '克', unitWeight: 100, unitType: '克' },
-        { id: 'beef_lean', name: '牛肉（瘦肉）', calories: 143, protein: 20, carbs: 0, fat: 6, defaultUnit: '克', unitWeight: 100, unitType: '克' },
-        { id: 'pork_lean', name: '猪瘦肉', calories: 143, protein: 20, carbs: 0, fat: 6, defaultUnit: '克', unitWeight: 100, unitType: '克' },
-        { id: 'salmon', name: '三文鱼', calories: 208, protein: 20, carbs: 0, fat: 13, defaultUnit: '克', unitWeight: 100, unitType: '克' },
+        { id: 'chicken_breast', name: '鸡胸肉（生）', calories: 165, protein: 31, carbs: 0, fat: 3.6, defaultUnit: '克', unitWeight: 100, unitType: '克' },
+        { id: 'chicken_leg', name: '鸡腿肉（去皮，生）', calories: 130, protein: 20, carbs: 0, fat: 5, defaultUnit: '克', unitWeight: 100, unitType: '克' },
+        { id: 'beef_lean', name: '牛肉（瘦肉，生）', calories: 143, protein: 20, carbs: 0, fat: 6, defaultUnit: '克', unitWeight: 100, unitType: '克' },
+        { id: 'pork_lean', name: '猪瘦肉（生）', calories: 143, protein: 20, carbs: 0, fat: 6, defaultUnit: '克', unitWeight: 100, unitType: '克' },
+        { id: 'salmon', name: '三文鱼（生）', calories: 208, protein: 20, carbs: 0, fat: 13, defaultUnit: '克', unitWeight: 100, unitType: '克' },
         { id: 'egg_whole', name: '鸡蛋（全蛋）', calories: 143, protein: 13, carbs: 1, fat: 10, defaultUnit: '个', unitWeight: 50, unitType: '个' },
         { id: 'egg_white', name: '鸡蛋（蛋白）', calories: 48, protein: 11, carbs: 1, fat: 0.2, defaultUnit: '个', unitWeight: 33, unitType: '个' },
         { id: 'tofu', name: '豆腐', calories: 76, protein: 8, carbs: 2, fat: 4.8, defaultUnit: '克', unitWeight: 100, unitType: '克' },
@@ -1081,17 +1082,17 @@
         { id: 'rice_raw', name: '米饭（生）', calories: 320, protein: 7, carbs: 75, fat: 1, defaultUnit: '克', unitWeight: 100, unitType: '克' },
         { id: 'bread_wheat', name: '全麦面包', calories: 247, protein: 13, carbs: 41, fat: 4, defaultUnit: '克', unitWeight: 100, unitType: '克' },
         { id: 'bread_white', name: '白面包', calories: 265, protein: 9, carbs: 49, fat: 3.2, defaultUnit: '克', unitWeight: 100, unitType: '克' },
-        { id: 'sweet_potato', name: '红薯', calories: 86, protein: 1.6, carbs: 20, fat: 0.1, defaultUnit: '克', unitWeight: 100, unitType: '克' },
-        { id: 'potato', name: '土豆', calories: 77, protein: 2, carbs: 17, fat: 0.1, defaultUnit: '克', unitWeight: 100, unitType: '克' },
-        { id: 'oats', name: '燕麦片', calories: 389, protein: 16.9, carbs: 66, fat: 6.9, defaultUnit: '克', unitWeight: 100, unitType: '克' },
+        { id: 'sweet_potato', name: '红薯（生）', calories: 86, protein: 1.6, carbs: 20, fat: 0.1, defaultUnit: '克', unitWeight: 100, unitType: '克' },
+        { id: 'potato', name: '土豆（生）', calories: 77, protein: 2, carbs: 17, fat: 0.1, defaultUnit: '克', unitWeight: 100, unitType: '克' },
+        { id: 'oats', name: '燕麦片（干）', calories: 389, protein: 16.9, carbs: 66, fat: 6.9, defaultUnit: '克', unitWeight: 100, unitType: '克' },
         { id: 'banana', name: '香蕉', calories: 89, protein: 1.1, carbs: 23, fat: 0.3, defaultUnit: '克', unitWeight: 100, unitType: '克' },
         { id: 'apple', name: '苹果', calories: 52, protein: 0.3, carbs: 14, fat: 0.2, defaultUnit: '克', unitWeight: 100, unitType: '克' },
         { id: 'orange', name: '橙子', calories: 47, protein: 0.9, carbs: 12, fat: 0.1, defaultUnit: '克', unitWeight: 100, unitType: '克' },
         { id: 'grape', name: '葡萄', calories: 69, protein: 0.7, carbs: 18, fat: 0.2, defaultUnit: '克', unitWeight: 100, unitType: '克' },
         { id: 'strawberry', name: '草莓', calories: 32, protein: 0.7, carbs: 8, fat: 0.3, defaultUnit: '克', unitWeight: 100, unitType: '克' },
         { id: 'watermelon', name: '西瓜', calories: 30, protein: 0.6, carbs: 8, fat: 0.2, defaultUnit: '克', unitWeight: 100, unitType: '克' },
-        { id: 'broccoli', name: '西兰花', calories: 34, protein: 2.8, carbs: 7, fat: 0.4, defaultUnit: '克', unitWeight: 100, unitType: '克' },
-        { id: 'spinach', name: '菠菜', calories: 23, protein: 2.9, carbs: 3.6, fat: 0.4, defaultUnit: '克', unitWeight: 100, unitType: '克' },
+        { id: 'broccoli', name: '西兰花（生）', calories: 34, protein: 2.8, carbs: 7, fat: 0.4, defaultUnit: '克', unitWeight: 100, unitType: '克' },
+        { id: 'spinach', name: '菠菜（生）', calories: 23, protein: 2.9, carbs: 3.6, fat: 0.4, defaultUnit: '克', unitWeight: 100, unitType: '克' },
         { id: 'tomato', name: '番茄', calories: 18, protein: 0.9, carbs: 4, fat: 0.2, defaultUnit: '克', unitWeight: 100, unitType: '克' },
         { id: 'cucumber', name: '黄瓜', calories: 15, protein: 0.7, carbs: 3.6, fat: 0.1, defaultUnit: '克', unitWeight: 100, unitType: '克' },
         { id: 'carrot', name: '胡萝卜', calories: 41, protein: 0.9, carbs: 10, fat: 0.2, defaultUnit: '克', unitWeight: 100, unitType: '克' },
@@ -1129,6 +1130,22 @@
                 const data = JSON.parse(raw);
                 users = data.users || [];
                 dailyData = data.dailyData || {};
+                // 历史数据迁移：补 quantity 字段
+                Object.keys(dailyData).forEach(uid => {
+                    Object.keys(dailyData[uid]).forEach(date => {
+                        Object.keys(dailyData[uid][date]).forEach(meal => {
+                            dailyData[uid][date][meal].forEach(item => {
+                                if (item.quantity === undefined) {
+                                    if (item.unit === '个' || item.unit === '份') {
+                                        item.quantity = Math.max(1, Math.round(item.weight / 50));
+                                    } else {
+                                        item.quantity = item.weight;
+                                    }
+                                }
+                            });
+                        });
+                    });
+                });
                 weightRecords = data.weightRecords || {};
                 customFoods = data.customFoods || {};
                 currentUserId = data.currentUserId || (users.length > 0 ? users[0].id : null);
@@ -2822,7 +2839,7 @@
                     // 再从云端加载
                     await loadFromCloud();
                     showMainApp();
-                    console.log('🥗 智能饮食规划器 V2.2 已加载（云端模式）');
+                    console.log('🥗 智能饮食规划器 V2.4 已加载（云端模式）');
                     return;
                 }
             } catch (e) {
@@ -2832,7 +2849,7 @@
         // 未登录，显示登录表单，隐藏 loading
         document.getElementById('authInitLoading').style.display = 'none';
         document.getElementById('authFormBox').style.display = 'block';
-        console.log('🥗 智能饮食规划器 V2.2 已加载（待登录）');
+        console.log('🥗 智能饮食规划器 V2.4 已加载（待登录）');
     });
 
     function bindAllEvents() {
@@ -2927,7 +2944,7 @@
         let resizeTimer;
         window.addEventListener('resize', function() { clearTimeout(resizeTimer); resizeTimer = setTimeout(renderWeightChart, 200); });
 
-        console.log('🥗 智能饮食规划器 V2.2 事件绑定完成');
+        console.log('🥗 智能饮食规划器 V2.4 事件绑定完成');
     }
 
     // 全局错误捕获
