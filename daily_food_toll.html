@@ -849,6 +849,32 @@
                             _dbId: m.id
                         });
                     });
+                    // 合并本地有但云端没有的数据（防止刷新丢失刚添加的食物）
+                    if (localUsers.length > 0 && localDailyData[localUsers[0].id]) {
+                        const localMeals = localDailyData[localUsers[0].id];
+                        for (const date in localMeals) {
+                            if (!dailyData[profileId][date]) dailyData[profileId][date] = { breakfast: [], lunch: [], dinner: [], snack: [] };
+                            for (const mealKey of ['breakfast','lunch','dinner','snack']) {
+                                const localItems = (localMeals[date][mealKey] || []);
+                                const cloudItems = dailyData[profileId][date][mealKey] || [];
+                                const cloudDbIds = new Set(cloudItems.map(i=>i._dbId).filter(Boolean));
+                                const cloudKeys = new Set(cloudItems.map(i=>i.id+'_'+i.name+'_'+i.weight));
+                                localItems.forEach(li => {
+                                    if (li._dbId && cloudDbIds.has(li._dbId)) return;
+                                    if (!li._dbId && cloudKeys.has(li.id+'_'+li.name+'_'+li.weight)) return;
+                                    dailyData[profileId][date][mealKey].push(li);
+                                    // 同步缺失的本地数据到云端
+                                    if (!li._dbId && isOnlineMode && currentUser) {
+                                        supabaseClient.from('daily_data').insert({
+                                            user_id: uid, date, meal_key: mealKey,
+                                            food_id: li.id, food_name: li.name, weight: li.weight, unit: li.unit,
+                                            quantity: li.quantity, calories: li.calories, protein: li.protein, carbs: li.carbs, fat: li.fat
+                                        }).then(({data})=>{if(data) li._dbId=data.id}).catch(e=>console.error('合并同步失败:',e));
+                                    }
+                                });
+                            }
+                        }
+                    }
                 } else if (localUsers.length > 0 && localDailyData[localUsers[0].id]) {
                     // 云端无饮食数据，本地有 → 用本地数据 + 同步到云端
                     const profileId = users[0].id;
@@ -863,6 +889,22 @@
                     weightRecords[users[0].id] = weights.map(w => ({
                         date: w.date, weight: w.weight, bodyfat: w.bodyfat, time: w.time, note: w.note, _dbId: w.id
                     }));
+                    // 合并本地有但云端没有的体重记录
+                    if (localUsers.length > 0 && localWeightRecords[localUsers[0].id]) {
+                        const localW = localWeightRecords[localUsers[0].id];
+                        const cloudKeys = new Set(weights.map(w => w.date+'_'+w.time));
+                        localW.forEach(lw => {
+                            if (!cloudKeys.has(lw.date+'_'+lw.time)) {
+                                weightRecords[users[0].id].push(lw);
+                                if (!lw._dbId && isOnlineMode && currentUser) {
+                                    supabaseClient.from('weight_records').insert({
+                                        user_id: uid, date: lw.date, weight: lw.weight,
+                                        bodyfat: lw.bodyfat || null, time: lw.time, note: lw.note || ''
+                                    }).then(({data})=>{if(data) lw._dbId=data.id}).catch(e=>console.error('体重合并同步失败:',e));
+                                }
+                            }
+                        });
+                    }
                 } else if (localUsers.length > 0 && localWeightRecords[localUsers[0].id]) {
                     weightRecords[users[0].id] = localWeightRecords[localUsers[0].id];
                     await syncLocalWeightsToCloud(uid, localWeightRecords[localUsers[0].id]);
@@ -877,19 +919,42 @@
                         carbs: f.carbs, fat: f.fat, defaultUnit: f.default_unit,
                         unitWeight: f.unit_weight, unitType: f.unit_type, isCustom: true, _dbId: f.id
                     }));
+                    // 合并本地有但云端没有的自定义食物
+                    if (localUsers.length > 0 && localCustomFoods[localUsers[0].id]) {
+                        const localF = localCustomFoods[localUsers[0].id];
+                        const cloudFoodIds = new Set(foods.map(f => f.food_id));
+                        localF.forEach(lf => {
+                            if (!cloudFoodIds.has(lf.id)) {
+                                customFoods[users[0].id].push(lf);
+                                if (!lf._dbId && isOnlineMode && currentUser) {
+                                    supabaseClient.from('custom_foods').insert({
+                                        user_id: uid, food_id: lf.id, name: lf.name,
+                                        calories: lf.calories, protein: lf.protein, carbs: lf.carbs,
+                                        fat: lf.fat, default_unit: lf.defaultUnit,
+                                        unit_weight: lf.unitWeight || 100, unit_type: lf.unitType
+                                    }).then(({data})=>{if(data) lf._dbId=data.id}).catch(e=>console.error('食物合并同步失败:',e));
+                                }
+                            }
+                        });
+                    }
                 } else if (localUsers.length > 0 && localCustomFoods[localUsers[0].id]) {
                     customFoods[users[0].id] = localCustomFoods[localUsers[0].id];
                     await syncLocalFoodsToCloud(uid, localCustomFoods[localUsers[0].id]);
                 }
 
-                // 更新本地档案为云端档案
+                // 档案合并：以本地最新值为准（用户可能刚改了身高体重等），云端建档快照保留
                 if (localUsers.length > 0) {
-                    // 本地档案信息合并到云端档案，但保留云端的 initialWeight/initialBodyFat（建档快照以云端为准）
                     const cloudInitWeight = users[0].initialWeight;
                     const cloudInitBodyFat = users[0].initialBodyFat;
-                    const merged = { ...localUsers[0], id: users[0].id };
-                    Object.assign(users[0], merged, { id: users[0].id });
-                    // 恢复云端建档快照（不被本地 null 覆盖）
+                    // 本地如果有比云端更新的档案信息，覆盖到当前 users[0]
+                    const lu = localUsers[0];
+                    // 逐字段比较，本地非空且与云端不同的就取本地值
+                    ['name','gender','age','height','weight','bodyFat','goal','targetWeight','targetBodyFat','activity','days'].forEach(k => {
+                        if (lu[k] !== undefined && lu[k] !== null && lu[k] !== users[0][k]) {
+                            users[0][k] = lu[k];
+                        }
+                    });
+                    // 保留云端建档快照
                     if (cloudInitWeight !== null && cloudInitWeight !== undefined) users[0].initialWeight = cloudInitWeight;
                     if (cloudInitBodyFat !== null && cloudInitBodyFat !== undefined) users[0].initialBodyFat = cloudInitBodyFat;
                     await saveProfileToCloud(users[0]);
@@ -2486,18 +2551,31 @@
                             const userId = currentProfileId || rawUserId;
                             if (!userId) return;
                             if (!customFoods[userId]) customFoods[userId] = [];
-                            const existing = customFoods[userId].find(f => f.name === row['食材名称']);
-                            if (!existing) {
-                                customFoods[userId].push({
-                                    id: row['食材ID'] || ('custom_' + Date.now() + '_' + Math.random().toString(36).slice(2,6)),
-                                    name: row['食材名称'],
-                                    calories: parseFloat(row['热量(大卡/100g)']) || 0,
-                                    protein: parseFloat(row['蛋白质(g)']) || 0,
-                                    carbs: parseFloat(row['碳水(g)']) || 0,
-                                    fat: parseFloat(row['脂肪(g)']) || 0,
-                                    defaultUnit: row['单位类型'] || '克',
-                                    unitWeight: 100, isCustom: true, unitType: row['单位类型'] || '克',
-                                });
+                            const foodId = row['食材ID'] || ('custom_' + Date.now() + '_' + Math.random().toString(36).slice(2,6));
+                            const existing = customFoods[userId].find(f => f.id === foodId);
+                            const newFood = {
+                                id: foodId,
+                                name: row['食材名称'],
+                                calories: parseFloat(row['热量(大卡/100g)']) || 0,
+                                protein: parseFloat(row['蛋白质(g)']) || 0,
+                                carbs: parseFloat(row['碳水(g)']) || 0,
+                                fat: parseFloat(row['脂肪(g)']) || 0,
+                                defaultUnit: row['单位类型'] || '克',
+                                unitWeight: 100, isCustom: true, unitType: row['单位类型'] || '克',
+                            };
+                            if (existing) {
+                                // ID相同，内容不同 → 更新内容
+                                Object.assign(existing, newFood);
+                                // 云端更新
+                                if (isOnlineMode && existing._dbId) {
+                                    supabaseClient.from('custom_foods').update({
+                                        name: newFood.name, calories: newFood.calories, protein: newFood.protein,
+                                        carbs: newFood.carbs, fat: newFood.fat, default_unit: newFood.defaultUnit,
+                                        unit_type: newFood.unitType
+                                    }).eq('id', existing._dbId).then(()=>{}).catch(e=>console.error('云端更新食物失败:',e));
+                                }
+                            } else {
+                                customFoods[userId].push(newFood);
                                 importedFoods++;
                             }
                         });
