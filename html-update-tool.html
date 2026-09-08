@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>🚀 GitHub Pages 部署工具 V2.0</title>
+<title>🚀 GitHub Pages 部署工具 V2.2</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,-apple-system,sans-serif}
 body{background:#F5F7FA;color:#1A1A2E;padding:20px;min-height:100vh;display:flex;justify-content:center;transition:all .3s}
@@ -39,7 +39,7 @@ body{background:#F5F7FA;color:#1A1A2E;padding:20px;min-height:100vh;display:flex
 .file-drop.dragover{border-color:#2D8B46;background:#E8F5E9}
 .file-drop .icon{font-size:24px;margin-bottom:4px}
 .file-drop p{color:#6B7280;font-size:12px}
-.check-list{flex:1}
+.check-list{flex:1;display:flex;flex-direction:column;justify-content:space-evenly;padding-top:4px;padding-bottom:10px}
 .check-card{display:flex;align-items:center;justify-content:center;gap:6px;padding:5px 14px;border-radius:6px;border:1px solid #E5E7EB;font-size:12px;color:#9CA3AF;background:#F9FAFB;margin:3px 0;width:fit-content;min-width:160px;box-sizing:border-box}
 .check-card.ok{color:#2D8B46;border-color:#D1FAE5;background:#F0FDF4}
 .check-card.fail{color:#DC2626;border-color:#FEE2E2;background:#FEF2F2}
@@ -80,7 +80,7 @@ textarea.commit-input{width:100%;min-height:66px;resize:vertical;padding:8px 12p
 </head>
 <body>
 <div class="app col3" id="app">
-<div class="header"><h1>🚀 GitHub Pages 部署工具 V2.0</h1><p>从零到上线，浏览器一键完成</p></div>
+<div class="header"><h1>🚀 GitHub Pages 部署工具 V2.2</h1><p>从零到上线，浏览器一键完成</p></div>
 <div id="stepBar" class="step-indicator">
 <span class="step step-pending" id="step1">1. Token</span><span class="step-arrow">→</span>
 <span class="step step-pending" id="step2">2. 配置</span><span class="step-arrow">→</span>
@@ -283,19 +283,20 @@ function renderChecksInitial(){
   });
 }
 function runChecks(content){
-  const c=document.getElementById('checks');
-  const cards=c.querySelectorAll('.check-card');
-  let allPass=true;let checkIdx=0;
+  const c=document.getElementById('checks');c.innerHTML='<div class="check-wrap"></div>';
+  const wrap=c.querySelector('.check-wrap');
+  let allPass=true;
   const applicable=ALL_CHECKS.filter(ck=>!ck.cond||ck.cond(content));
-  cards.forEach((el,i)=>{
-    const ck=applicable[checkIdx];checkIdx++;
-    if(!ck)return;
+  applicable.forEach((ck,i)=>{
+    const el=document.createElement('div');el.className='check-card';
+    el.innerHTML='<span class="icon">&nbsp;</span><span>'+ck.n+'</span>';
+    wrap.appendChild(el);
     setTimeout(()=>{
       const p=ck.t(content);
       el.className='check-card '+(p?'ok':'fail');
       el.querySelector('.icon').textContent=p?'✅':'❌';
       if(!p)allPass=false;
-      if(checkIdx>=applicable.length){
+      if(i===applicable.length-1){
         markStep(4);
         if(allPass){setStatus('status-ok','✅ 校验通过，可以部署');document.getElementById('deployBtn').disabled=false;checksPassed=true}
         else{setStatus('status-err','❌ 校验失败，请修复后再部署');document.getElementById('deployBtn').disabled=true}
