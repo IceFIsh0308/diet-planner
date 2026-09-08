@@ -66,6 +66,10 @@ body{background:#F5F7FA;color:#1A1A2E;padding:20px;min-height:100vh;display:flex
 .step-current{background:#DBEAFE;color:#2563EB}
 .step-pending{background:#F3F4F6;color:#9CA3AF}
 .step-arrow{color:#D1D5DB;font-size:12px}
+.two-col{display:flex;gap:16px;align-items:flex-start}
+.col-left{flex:0 0 42%;min-width:280px}
+.col-right{flex:1;min-width:0}
+@media(max-width:640px){.two-col{flex-direction:column}.col-left,.col-right{flex:1 1 100%;min-width:0}}
 </style>
 </head>
 <body>
@@ -85,6 +89,8 @@ body{background:#F5F7FA;color:#1A1A2E;padding:20px;min-height:100vh;display:flex
 <div class="hint">生成地址：<a href="https://github.com/settings/tokens" target="_blank">github.com/settings/tokens</a> → 勾选 repo → Generate<br>Token 只存在本地浏览器，不上传任何服务器</div>
 <div class="token-ok" id="tokenOk">✅ Token 有效，已加载仓库列表</div>
 </div>
+<div class="two-col">
+<div class="col-left">
 <div class="card">
 <div class="card-title">⚙️ 部署配置</div>
 <div class="config-panel">
@@ -101,6 +107,8 @@ body{background:#F5F7FA;color:#1A1A2E;padding:20px;min-height:100vh;display:flex
 <p class="hint">新项目选好仓库名即可，仓库不存在会自动创建</p>
 </div>
 </div>
+</div>
+<div class="col-right">
 <div class="card">
 <div class="card-title">📦 选择文件</div>
 <div class="file-drop" id="fileDrop"><div class="icon">📁</div><p>点击选择或拖拽 HTML 文件到此处</p><p style="font-size:11px;color:#9CA3AF;margin-top:4px">任意 HTML 文件</p></div>
@@ -110,6 +118,7 @@ body{background:#F5F7FA;color:#1A1A2E;padding:20px;min-height:100vh;display:flex
 <div class="row"><span class="label">大小</span><span class="value" id="infoSize">-</span></div>
 <div class="row"><span class="label">行数</span><span class="value" id="infoLines">-</span></div>
 <div class="row"><span class="label">版本</span><span class="value" id="infoVersion">-</span></div>
+</div>
 </div>
 </div>
 <div class="card" id="checkCard" style="display:none"><div class="card-title">🔍 部署前校验</div><div class="checks" id="checks"></div></div>
