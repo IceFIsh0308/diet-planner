@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
-    <title>智能饮食规划器 V2.4</title>
+    <title>智能饮食规划器 V2.5</title>
     <!-- SheetJS CDN — 用于XLSX多sheet导入导出 -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <!-- Supabase JS SDK v2 -->
@@ -114,8 +114,8 @@
         .ring-item .ring-pct.over { color: #DC2626; }
         .ring-item .ring-pct.under { color: var(--primary); }
 
-        .meal-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; flex: 1; min-height: 0; margin-bottom: 8px; }
-        .meal-col { display: flex; flex-direction: column; border: 1.5px solid var(--border); border-radius: var(--radius-sm); overflow: visible; background: var(--bg); min-height: 0; position: relative; }
+        .meal-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; flex: 1; min-height: 0; margin-bottom: 8px; }
+        .meal-col { display: flex; flex-direction: column; border: 1.5px solid var(--border); border-radius: var(--radius-sm); overflow: visible; background: var(--bg); min-height: 0; min-width: 0; position: relative; }
         .meal-col .meal-header { padding: 4px 8px; font-size: 12px; font-weight: 600; text-align: center; background: var(--primary-bg); color: var(--primary); border-bottom: 1.5px solid var(--border); cursor: pointer; transition: background 0.2s; flex-shrink: 0; user-select: none; border-radius: 7px 7px 0 0; }
         .meal-col .meal-header:hover { background: var(--primary-bg); }
         .meal-col.active .meal-header { background: var(--primary); color: #fff; border-bottom-color: var(--primary); }
@@ -124,7 +124,7 @@
         .meal-col .meal-items .empty-state { text-align: center; padding: 16px 4px; color: var(--text-secondary); font-size: 11px; }
 
         .food-item-sm { display: flex; align-items: center; padding: 4px 6px; border-bottom: 1px solid var(--border); font-size: 11px; gap: 0; cursor: default; background: #fff; border-radius: 4px; margin-bottom: 2px; transition: background 0.2s; position: relative; }
-        .food-item-sm .fname { flex: 1 1 auto; font-weight: 500; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; text-align: left; }
+        .food-item-sm .fname { flex: 1 1 0; font-weight: 500; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; text-align: left; }
         .food-item-sm .fweight { font-size: 10px; color: var(--text-secondary); white-space: nowrap; flex: 0 0 auto; width: 52px; text-align: right; margin-right: 8px; }
         .food-item-sm .fcal { font-weight: 600; font-size: 11px; white-space: nowrap; flex: 0 0 auto; width: 42px; text-align: right; margin-right: 16px; }
         .food-item-sm .factions { display: none; }
@@ -597,7 +597,7 @@
 </div>
 
 <div class="toast" id="toast"></div>
-<div style="position:fixed;bottom:4px;right:8px;font-size:10px;color:#ccc;pointer-events:none;">V2.4</div>
+<div style="position:fixed;bottom:4px;right:8px;font-size:10px;color:#ccc;pointer-events:none;">V2.5</div>
 
 <script>
     // ============================================================
@@ -2839,7 +2839,7 @@
                     // 再从云端加载
                     await loadFromCloud();
                     showMainApp();
-                    console.log('🥗 智能饮食规划器 V2.4 已加载（云端模式）');
+                    console.log('🥗 智能饮食规划器 V2.5 已加载（云端模式）');
                     return;
                 }
             } catch (e) {
@@ -2849,7 +2849,7 @@
         // 未登录，显示登录表单，隐藏 loading
         document.getElementById('authInitLoading').style.display = 'none';
         document.getElementById('authFormBox').style.display = 'block';
-        console.log('🥗 智能饮食规划器 V2.4 已加载（待登录）');
+        console.log('🥗 智能饮食规划器 V2.5 已加载（待登录）');
     });
 
     function bindAllEvents() {
@@ -2944,7 +2944,7 @@
         let resizeTimer;
         window.addEventListener('resize', function() { clearTimeout(resizeTimer); resizeTimer = setTimeout(renderWeightChart, 200); });
 
-        console.log('🥗 智能饮食规划器 V2.4 事件绑定完成');
+        console.log('🥗 智能饮食规划器 V2.5 事件绑定完成');
     }
 
     // 全局错误捕获
