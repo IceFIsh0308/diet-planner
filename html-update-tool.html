@@ -6,8 +6,10 @@
 <title>🚀 GitHub Pages 部署工具 V2.0</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,-apple-system,sans-serif}
-body{background:#F5F7FA;color:#1A1A2E;padding:20px;min-height:100vh;display:flex;justify-content:center}
-.app{max-width:1100px;width:100%}
+body{background:#F5F7FA;color:#1A1A2E;padding:20px;min-height:100vh;display:flex;justify-content:center;transition:all .3s}
+.app{width:100%;transition:max-width .3s}
+.app.col3{max-width:880px}
+.app.col4{max-width:1180px}
 .header{text-align:center;margin-bottom:20px}
 .header h1{font-size:22px;color:#2D8B46}
 .header p{font-size:13px;color:#6B7280;margin-top:4px}
@@ -19,8 +21,8 @@ body{background:#F5F7FA;color:#1A1A2E;padding:20px;min-height:100vh;display:flex
 .status-run{background:#DBEAFE;color:#2563EB}
 .spinner{display:inline-block;width:14px;height:14px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.three-col{display:flex;gap:14px;align-items:stretch}
-.col{flex:1;min-width:0;display:flex;flex-direction:column}
+.cols{display:flex;gap:14px;align-items:stretch;justify-content:center}
+.col{flex:1;min-width:0;max-width:300px;display:flex;flex-direction:column}
 .card{background:#fff;border-radius:12px;padding:18px;box-shadow:0 2px 8px rgba(0,0,0,0.06);flex:1;display:flex;flex-direction:column}
 .card-title{font-size:14px;font-weight:600;margin-bottom:12px;color:#374151}
 .field{margin-bottom:10px}
@@ -38,10 +40,15 @@ body{background:#F5F7FA;color:#1A1A2E;padding:20px;min-height:100vh;display:flex
 .file-drop .icon{font-size:24px;margin-bottom:4px}
 .file-drop p{color:#6B7280;font-size:12px}
 .check-list{flex:1}
-.check-item{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:13px;color:#9CA3AF}
-.check-item .icon{width:20px;text-align:center}
-.check-ok{color:#2D8B46}
-.check-fail{color:#DC2626}
+.check-card{display:flex;align-items:center;justify-content:center;gap:6px;padding:5px 14px;border-radius:6px;border:1px solid #E5E7EB;font-size:12px;color:#9CA3AF;background:#F9FAFB;margin:3px 0;width:fit-content;min-width:160px;box-sizing:border-box}
+.check-card.ok{color:#2D8B46;border-color:#D1FAE5;background:#F0FDF4}
+.check-card.fail{color:#DC2626;border-color:#FEE2E2;background:#FEF2F2}
+.check-card .icon{width:16px;text-align:center;flex-shrink:0}
+.check-wrap{display:flex;flex-direction:column;align-items:center;gap:4px}
+.info-card{display:flex;justify-content:space-between;align-items:center;padding:5px 12px;border-radius:6px;background:#F9FAFB;border:1px solid #F3F4F6;font-size:12px;margin-bottom:6px}
+.info-card .label{color:#9CA3AF}
+.info-card .value{color:#9CA3AF;font-weight:500}
+.info-card .value.filled{color:#1A1A2E}
 .btn{width:100%;padding:12px;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s}
 .btn-primary{background:#2D8B46;color:#fff}
 .btn-primary:hover{background:#246B38}
@@ -60,24 +67,19 @@ textarea.commit-input{width:100%;min-height:66px;resize:vertical;padding:8px 12p
 .step-done{background:#D1FAE5;color:#059669}
 .step-current{background:#DBEAFE;color:#2563EB}
 .step-pending{background:#F3F4F6;color:#9CA3AF}
+.step-success{background:#D1FAE5;color:#059669}
+.step-error{background:#FEE2E2;color:#DC2626}
 .step-arrow{color:#D1D5DB;font-size:12px}
 .token-ok{color:#059669;font-size:12px;margin-top:2px;display:none}
 .token-ok.show{display:block}
 .refresh-btn{display:inline-block;margin-left:6px;font-size:11px;color:#2D8B46;cursor:pointer;text-decoration:underline}
-.check-card{display:flex;align-items:center;justify-content:center;gap:6px;padding:5px 14px;border-radius:6px;border:1px solid #E5E7EB;font-size:12px;color:#9CA3AF;background:#F9FAFB;margin:3px 0;width:fit-content;min-width:160px;box-sizing:border-box}
-.check-card.ok{color:#2D8B46;border-color:#D1FAE5;background:#F0FDF4}
-.check-card.fail{color:#DC2626;border-color:#FEE2E2;background:#FEF2F2}
-.check-card .icon{width:16px;text-align:center;flex-shrink:0}
-.check-wrap{display:flex;flex-direction:column;align-items:center;gap:4px}
-.info-card{display:flex;justify-content:space-between;align-items:center;padding:5px 12px;border-radius:6px;background:#F9FAFB;border:1px solid #F3F4F6;font-size:12px;margin-bottom:6px}
-.info-card .label{color:#9CA3AF}
-.info-card .value{color:#9CA3AF;font-weight:500}
-.info-card .value.filled{color:#1A1A2E}
-@media(max-width:900px){.three-col{flex-direction:column}.col{flex:1 1 100%}}
+.col-deploy{display:none}
+.col-deploy.show{display:flex}
+@media(max-width:900px){.cols{flex-direction:column}.col{max-width:100%}}
 </style>
 </head>
 <body>
-<div class="app">
+<div class="app col3" id="app">
 <div class="header"><h1>🚀 GitHub Pages 部署工具 V2.0</h1><p>从零到上线，浏览器一键完成</p></div>
 <div id="stepBar" class="step-indicator">
 <span class="step step-pending" id="step1">1. Token</span><span class="step-arrow">→</span>
@@ -87,7 +89,7 @@ textarea.commit-input{width:100%;min-height:66px;resize:vertical;padding:8px 12p
 <span class="step step-pending" id="step5">5. 部署</span>
 </div>
 <div id="statusBar" class="status-bar status-idle"><span>⏳ 请填写 Token 开始</span></div>
-<div class="three-col">
+<div class="cols" id="colsWrap">
 <div class="col">
 <div class="card">
 <div class="card-title">⚙️ 部署配置</div>
@@ -130,9 +132,14 @@ textarea.commit-input{width:100%;min-height:66px;resize:vertical;padding:8px 12p
 <div class="check-list" id="checks"></div>
 <div class="btn-row">
 <button class="btn btn-secondary" onclick="resetAll()">重置</button>
-<button class="btn btn-primary" id="deployBtn" disabled onclick="deploy()">🚀 确认部署</button>
+<button class="btn btn-primary" id="deployBtn" disabled onclick="startDeploy()">🚀 确认部署</button>
 </div>
-<div class="log" id="logBox"></div>
+</div>
+</div>
+<div class="col col-deploy" id="colDeploy">
+<div class="card">
+<div class="card-title">📋 部署日志</div>
+<div class="log show" id="logBox" style="max-height:none;flex:1"></div>
 <div style="text-align:center;font-size:11px;color:#9CA3AF;margin-top:8px">Pages 1-2 分钟自动更新</div>
 </div>
 </div>
@@ -147,7 +154,7 @@ let ghToken='',repoList=[],branchList=[],fileList=[];
 let fileContent=null,fileName='',checksPassed=false;
 function markStep(n){for(let i=1;i<=5;i++){const el=document.getElementById('step'+i);if(i<n)el.className='step step-done';else if(i===n)el.className='step step-current';else el.className='step step-pending'}}
 function setStatus(c,t,sp){const b=document.getElementById('statusBar');b.className='status-bar '+c;b.innerHTML=(sp?'<span class="spinner"></span>':'')+'<span>'+t+'</span>'}
-function log(m,t){const b=document.getElementById('logBox');b.classList.add('show');const l=document.createElement('div');l.className='line log-'+(t||'info');l.textContent=m;b.appendChild(l);b.scrollTop=b.scrollHeight}
+function log(m,t){const b=document.getElementById('logBox');const l=document.createElement('div');l.className='line log-'+(t||'info');l.textContent=m;b.appendChild(l);b.scrollTop=b.scrollHeight}
 let tokenTimer=null;
 document.getElementById('githubToken').addEventListener('input',function(){
   const v=this.value.trim();
@@ -311,6 +318,12 @@ function handleFile(f){
     markStep(3);runChecks(fileContent)
   };r.readAsText(f)
 }
+function startDeploy(){
+  document.getElementById('logBox').innerHTML='';
+  document.getElementById('colDeploy').classList.add('show');
+  document.getElementById('app').className='app col4';
+  deploy();
+}
 async function deploy(){
   if(!checksPassed||!fileContent)return;
   const owner=document.getElementById('cfgOwner').value.trim(),repo=document.getElementById('cfgRepo').value.trim();
@@ -319,7 +332,7 @@ async function deploy(){
   if(!ghToken){alert('请填写 GitHub Token');return}
   if(!owner||!repo||repo==='__new__'){alert('请选择仓库');return}
   saveCurrentConfig();markStep(5);setStatus('status-run','🚀 正在部署...',true);
-  document.getElementById('deployBtn').disabled=true;document.getElementById('logBox').innerHTML='';
+  document.getElementById('deployBtn').disabled=true;
   log('🚀 开始部署...','info');log('文件: '+fileName,'info');log('说明: '+msg,'info');
   log('目标: '+owner+'/'+repo+'/'+path+' ('+branch+')','info');log('','info');
   try{
@@ -356,13 +369,13 @@ async function deploy(){
       log('✅ 推送成功！','ok');log('📝 Commit: '+pr2.data.commit.sha.substring(0,8),'ok');log('','info');
       const pu=pagesUrl||('https://'+owner.toLowerCase()+'.github.io/'+repo+'/');
       log('🌐 访问地址: '+pu,'ok');log('⏳ GitHub Pages 1-2 分钟后自动更新','info');
-      setStatus('status-ok','✅ 部署成功！');log('','info');log('🎉 部署完成！','ok');
+      setStatus('status-ok','✅ 部署成功！');log('','info');log('🎉 部署完成！','ok');document.getElementById('step5').className='step step-success';
     }else throw new Error(pr2.data.message||('HTTP '+pr2.status));
   }catch(e){
     log('❌ 部署失败: '+e.message,'err');
     if(e.message.includes('Bad credentials')){log('Token 无效或已过期','warn');log('https://github.com/settings/tokens','warn')}
     else if(e.message.includes('Not Found')){log('仓库不存在或 Token 没有 repo 权限','warn');log('1. 确认仓库已创建','warn');log('2. 确认 Token 勾选了 repo 权限','warn')}
-    setStatus('status-err','❌ 部署失败，查看日志');document.getElementById('deployBtn').disabled=false;
+    setStatus('status-err','❌ 部署失败，查看日志');document.getElementById('step5').className='step step-error';document.getElementById('deployBtn').disabled=false;
   }
 }
 function resetAll(){
@@ -370,7 +383,9 @@ function resetAll(){
   document.getElementById('fileInput').value='';
   ['infoName','infoSize','infoLines','infoVersion'].forEach(id=>{const el=document.getElementById(id);el.textContent='-';el.classList.remove('filled')});
   document.getElementById('deployBtn').disabled=true;
-  document.getElementById('logBox').innerHTML='';document.getElementById('logBox').classList.remove('show');
+  document.getElementById('logBox').innerHTML='';
+  document.getElementById('colDeploy').classList.remove('show');
+  document.getElementById('app').className='app col3';
   document.getElementById('commitMsg').value='';
   renderChecksInitial();
   markStep(ghToken?2:1);setStatus('status-idle','⏳ 等待选择文件');
