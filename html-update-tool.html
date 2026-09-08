@@ -64,6 +64,15 @@ textarea.commit-input{width:100%;min-height:66px;resize:vertical;padding:8px 12p
 .token-ok{color:#059669;font-size:12px;margin-top:2px;display:none}
 .token-ok.show{display:block}
 .refresh-btn{display:inline-block;margin-left:6px;font-size:11px;color:#2D8B46;cursor:pointer;text-decoration:underline}
+.check-card{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:6px;border:1px solid #E5E7EB;font-size:12px;color:#9CA3AF;background:#F9FAFB;margin:3px 0}
+.check-card.ok{color:#2D8B46;border-color:#D1FAE5;background:#F0FDF4}
+.check-card.fail{color:#DC2626;border-color:#FEE2E2;background:#FEF2F2}
+.check-card .icon{width:16px;text-align:center}
+.check-wrap{display:flex;flex-direction:column;align-items:center;gap:4px}
+.info-card{display:flex;justify-content:space-between;align-items:center;padding:5px 12px;border-radius:6px;background:#F9FAFB;border:1px solid #F3F4F6;font-size:12px;margin-bottom:6px}
+.info-card .label{color:#9CA3AF}
+.info-card .value{color:#9CA3AF;font-weight:500}
+.info-card .value.filled{color:#1A1A2E}
 @media(max-width:900px){.three-col{flex-direction:column}.col{flex:1 1 100%}}
 </style>
 </head>
@@ -105,10 +114,12 @@ textarea.commit-input{width:100%;min-height:66px;resize:vertical;padding:8px 12p
 <div class="field"><div class="field-label">选择文件</div>
 <div class="file-drop" id="fileDrop"><div class="icon">📁</div><p>点击或拖拽 HTML 文件</p></div>
 <input type="file" id="fileInput" accept=".html" style="display:none" /></div>
-<div class="field"><div class="field-label">文件名</div><div class="field-value" id="infoName">-</div></div>
-<div class="field"><div class="field-label">大小</div><div class="field-value" id="infoSize">-</div></div>
-<div class="field"><div class="field-label">行数</div><div class="field-value" id="infoLines">-</div></div>
-<div class="field"><div class="field-label">版本</div><div class="field-value" id="infoVersion">-</div></div>
+<div class="field"><div class="field-label">文件信息</div>
+<div class="info-card"><span class="label">文件名</span><span class="value" id="infoName">-</span></div>
+<div class="info-card"><span class="label">大小</span><span class="value" id="infoSize">-</span></div>
+<div class="info-card"><span class="label">行数</span><span class="value" id="infoLines">-</span></div>
+<div class="info-card"><span class="label">版本</span><span class="value" id="infoVersion">-</span></div>
+</div>
 <div class="field"><div class="field-label">部署说明</div>
 <textarea class="commit-input" id="commitMsg" placeholder="本次更新说明..."></textarea></div>
 </div>
@@ -255,24 +266,26 @@ const ALL_CHECKS=[
   {n:'拖动同步',t:c=>c.includes('handleFoodDrop'),cond:c=>c.includes('supabase')||c.includes('饮食规划')},
 ];
 function renderChecksInitial(){
-  const c=document.getElementById('checks');c.innerHTML='';
+  const c=document.getElementById('checks');c.innerHTML='<div class="check-wrap"></div>';
+  const wrap=c.querySelector('.check-wrap');
   ALL_CHECKS.forEach((ck,i)=>{
     if(ck.cond&&!ck.cond(''))return;
-    const el=document.createElement('div');el.className='check-item';
+    const el=document.createElement('div');el.className='check-card';
     el.innerHTML='<span class="icon"></span><span>'+ck.n+'</span>';
-    c.appendChild(el);
+    wrap.appendChild(el);
   });
 }
 function runChecks(content){
-  const c=document.getElementById('checks');c.innerHTML='';let allPass=true;
+  const c=document.getElementById('checks');c.innerHTML='<div class="check-wrap"></div>';let allPass=true;
+  const wrap=c.querySelector('.check-wrap');
   const applicable=ALL_CHECKS.filter(ck=>!ck.cond||ck.cond(content));
   applicable.forEach((ck,i)=>{
-    const el=document.createElement('div');el.className='check-item';
+    const el=document.createElement('div');el.className='check-card';
     el.innerHTML='<span class="icon">⏳</span><span>'+ck.n+'</span>';
-    c.appendChild(el);
+    wrap.appendChild(el);
     setTimeout(()=>{
       const p=ck.t(content);
-      el.className='check-item '+(p?'check-ok':'check-fail');
+      el.className='check-card '+(p?'ok':'fail');
       el.querySelector('.icon').textContent=p?'✅':'❌';
       if(!p)allPass=false;
       if(i===applicable.length-1){
