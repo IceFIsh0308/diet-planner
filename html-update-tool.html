@@ -64,10 +64,10 @@ textarea.commit-input{width:100%;min-height:66px;resize:vertical;padding:8px 12p
 .token-ok{color:#059669;font-size:12px;margin-top:2px;display:none}
 .token-ok.show{display:block}
 .refresh-btn{display:inline-block;margin-left:6px;font-size:11px;color:#2D8B46;cursor:pointer;text-decoration:underline}
-.check-card{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:6px;border:1px solid #E5E7EB;font-size:12px;color:#9CA3AF;background:#F9FAFB;margin:3px 0}
+.check-card{display:flex;align-items:center;justify-content:center;gap:6px;padding:5px 14px;border-radius:6px;border:1px solid #E5E7EB;font-size:12px;color:#9CA3AF;background:#F9FAFB;margin:3px 0;width:fit-content;min-width:160px;box-sizing:border-box}
 .check-card.ok{color:#2D8B46;border-color:#D1FAE5;background:#F0FDF4}
 .check-card.fail{color:#DC2626;border-color:#FEE2E2;background:#FEF2F2}
-.check-card .icon{width:16px;text-align:center}
+.check-card .icon{width:16px;text-align:center;flex-shrink:0}
 .check-wrap{display:flex;flex-direction:column;align-items:center;gap:4px}
 .info-card{display:flex;justify-content:space-between;align-items:center;padding:5px 12px;border-radius:6px;background:#F9FAFB;border:1px solid #F3F4F6;font-size:12px;margin-bottom:6px}
 .info-card .label{color:#9CA3AF}
@@ -271,24 +271,24 @@ function renderChecksInitial(){
   ALL_CHECKS.forEach((ck,i)=>{
     if(ck.cond&&!ck.cond(''))return;
     const el=document.createElement('div');el.className='check-card';
-    el.innerHTML='<span class="icon"></span><span>'+ck.n+'</span>';
+    el.innerHTML='<span class="icon">&nbsp;</span><span>'+ck.n+'</span>';
     wrap.appendChild(el);
   });
 }
 function runChecks(content){
-  const c=document.getElementById('checks');c.innerHTML='<div class="check-wrap"></div>';let allPass=true;
-  const wrap=c.querySelector('.check-wrap');
+  const c=document.getElementById('checks');
+  const cards=c.querySelectorAll('.check-card');
+  let allPass=true;let checkIdx=0;
   const applicable=ALL_CHECKS.filter(ck=>!ck.cond||ck.cond(content));
-  applicable.forEach((ck,i)=>{
-    const el=document.createElement('div');el.className='check-card';
-    el.innerHTML='<span class="icon">⏳</span><span>'+ck.n+'</span>';
-    wrap.appendChild(el);
+  cards.forEach((el,i)=>{
+    const ck=applicable[checkIdx];checkIdx++;
+    if(!ck)return;
     setTimeout(()=>{
       const p=ck.t(content);
       el.className='check-card '+(p?'ok':'fail');
       el.querySelector('.icon').textContent=p?'✅':'❌';
       if(!p)allPass=false;
-      if(i===applicable.length-1){
+      if(checkIdx>=applicable.length){
         markStep(4);
         if(allPass){setStatus('status-ok','✅ 校验通过，可以部署');document.getElementById('deployBtn').disabled=false;checksPassed=true}
         else{setStatus('status-err','❌ 校验失败，请修复后再部署');document.getElementById('deployBtn').disabled=true}
