@@ -70,6 +70,12 @@ body{background:#F5F7FA;color:#1A1A2E;padding:20px;min-height:100vh;display:flex
 .col-left{flex:0 0 42%;min-width:280px}
 .col-right{flex:1;min-width:0}
 @media(max-width:640px){.two-col{flex-direction:column}.col-left,.col-right{flex:1 1 100%;min-width:0}}
+.col-right{display:flex;flex-direction:column;gap:16px}
+.file-row{display:flex;gap:12px;align-items:stretch}
+.file-row .file-drop{flex:1;min-height:80px;display:flex;flex-direction:column;justify-content:center}
+.file-row .file-info{flex:0 0 40%;min-width:0;margin-top:0}
+.check-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 16px}
+@media(max-width:640px){.file-row{flex-direction:column}.check-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -111,22 +117,25 @@ body{background:#F5F7FA;color:#1A1A2E;padding:20px;min-height:100vh;display:flex
 <div class="col-right">
 <div class="card">
 <div class="card-title">📦 选择文件</div>
-<div class="file-drop" id="fileDrop"><div class="icon">📁</div><p>点击选择或拖拽 HTML 文件到此处</p><p style="font-size:11px;color:#9CA3AF;margin-top:4px">任意 HTML 文件</p></div>
-<input type="file" id="fileInput" accept=".html" style="display:none" />
+<div class="file-row">
+<div class="file-drop" id="fileDrop"><div class="icon">📁</div><p>点击或拖拽 HTML 文件</p></div>
 <div class="file-info" id="fileInfo">
 <div class="row"><span class="label">文件名</span><span class="value" id="infoName">-</span></div>
 <div class="row"><span class="label">大小</span><span class="value" id="infoSize">-</span></div>
 <div class="row"><span class="label">行数</span><span class="value" id="infoLines">-</span></div>
 <div class="row"><span class="label">版本</span><span class="value" id="infoVersion">-</span></div>
 </div>
-<div class="card" id="checkCard" style="display:none"><div class="card-title">🔍 部署前校验</div><div class="checks" id="checks"></div></div>
+</div>
+<input type="file" id="fileInput" accept=".html" style="display:none" />
+</div>
+<div class="card" id="checkCard" style="display:none"><div class="card-title">🔍 部署前校验</div><div class="checks check-grid" id="checks"></div></div>
 <div class="card">
 <div class="card-title">📝 部署说明</div>
 <input type="text" id="commitMsg" placeholder="本次更新说明" style="width:100%;padding:8px 12px;border:1.5px solid #E5E7EB;border-radius:6px;font-size:13px;margin-bottom:12px" />
 <div class="actions"><button class="btn btn-secondary" onclick="resetAll()">重置</button><button class="btn btn-primary" id="deployBtn" disabled onclick="deploy()">🚀 确认部署</button></div>
 </div>
 <div class="log" id="logBox"></div>
-<div style="text-align:center;margin-top:16px;font-size:12px;color:#9CA3AF">部署后 GitHub Pages 1-2 分钟自动更新</div>
+<div style="text-align:center;font-size:12px;color:#9CA3AF">部署后 GitHub Pages 1-2 分钟自动更新</div>
 </div>
 </div>
 </div>
