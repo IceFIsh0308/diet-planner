@@ -7,7 +7,7 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,-apple-system,sans-serif}
 body{background:#F5F7FA;color:#1A1A2E;padding:20px;min-height:100vh;display:flex;justify-content:center}
-.app{max-width:680px;width:100%}
+.app{max-width:1100px;width:100%}
 .header{text-align:center;margin-bottom:24px}
 .header h1{font-size:22px;color:#2D8B46}
 .header p{font-size:13px;color:#6B7280;margin-top:4px}
@@ -66,16 +66,9 @@ body{background:#F5F7FA;color:#1A1A2E;padding:20px;min-height:100vh;display:flex
 .step-current{background:#DBEAFE;color:#2563EB}
 .step-pending{background:#F3F4F6;color:#9CA3AF}
 .step-arrow{color:#D1D5DB;font-size:12px}
-.two-col{display:flex;gap:16px;align-items:flex-start}
-.col-left{flex:0 0 42%;min-width:280px}
-.col-right{flex:1;min-width:0}
-@media(max-width:640px){.two-col{flex-direction:column}.col-left,.col-right{flex:1 1 100%;min-width:0}}
-.col-right{display:flex;flex-direction:column;gap:16px}
-.file-row{display:flex;gap:12px;align-items:stretch}
-.file-row .file-drop{flex:1;min-height:80px;display:flex;flex-direction:column;justify-content:center}
-.file-row .file-info{flex:0 0 40%;min-width:0;margin-top:0}
-.check-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 16px}
-@media(max-width:640px){.file-row{flex-direction:column}.check-grid{grid-template-columns:1fr}}
+.three-col{display:flex;gap:14px;align-items:flex-start}
+.col{flex:1;min-width:0;display:flex;flex-direction:column;gap:14px}
+@media(max-width:900px){.three-col{flex-direction:column}.col{flex:1 1 100%}}
 </style>
 </head>
 <body>
@@ -89,18 +82,16 @@ body{background:#F5F7FA;color:#1A1A2E;padding:20px;min-height:100vh;display:flex
 <span class="step step-pending" id="step5">5. 部署</span>
 </div>
 <div id="statusBar" class="status-bar status-idle"><span>⏳ 请填写 Token 开始</span></div>
-<div class="token-section">
-<label>🔑 GitHub Personal Access Token</label>
-<input type="password" id="githubToken" placeholder="ghp_xxxxxxxxxxxx" />
-<div class="hint">生成地址：<a href="https://github.com/settings/tokens" target="_blank">github.com/settings/tokens</a> → 勾选 repo → Generate<br>Token 只存在本地浏览器，不上传任何服务器</div>
-<div class="token-ok" id="tokenOk">✅ Token 有效，已加载仓库列表</div>
-</div>
-<div class="two-col">
-<div class="col-left">
+<div class="three-col">
+<div class="col">
 <div class="card">
 <div class="card-title">⚙️ 部署配置</div>
 <div class="config-panel">
-<label>GitHub 用户名 <span class="refresh-btn" id="btnFetchRepos" style="display:none">刷新仓库列表</span></label>
+<label>🔑 GitHub Token</label>
+<input type="password" id="githubToken" placeholder="ghp_xxxxxxxxxxxx" />
+<div class="hint">生成：<a href="https://github.com/settings/tokens" target="_blank">github.com/settings/tokens</a> → 勾选 repo → Generate</div>
+<div class="token-ok" id="tokenOk">✅ Token 有效</div>
+<label>GitHub 用户名 <span class="refresh-btn" id="btnFetchRepos" style="display:none">刷新</span></label>
 <input type="text" id="cfgOwner" placeholder="自动获取" readonly />
 <label>仓库</label>
 <select id="cfgRepo" disabled><option>请先输入 Token</option></select>
@@ -108,17 +99,17 @@ body{background:#F5F7FA;color:#1A1A2E;padding:20px;min-height:100vh;display:flex
 <select id="cfgBranch" disabled><option>请先选择仓库</option></select>
 <label>部署文件路径</label>
 <select id="cfgPath" disabled><option>请先选择分支</option></select>
-<label>GitHub Pages 访问地址（自动生成，可修改）</label>
+<label>Pages 访问地址</label>
 <input type="text" id="cfgPages" placeholder="自动生成" />
-<p class="hint">新项目选好仓库名即可，仓库不存在会自动创建</p>
+<p class="hint">仓库不存在会自动创建</p>
 </div>
 </div>
 </div>
-<div class="col-right">
+<div class="col">
 <div class="card">
 <div class="card-title">📦 选择文件</div>
-<div class="file-row">
-<div class="file-drop" id="fileDrop"><div class="icon">📁</div><p>点击或拖拽 HTML 文件</p></div>
+<div class="file-drop" id="fileDrop"><div class="icon">📁</div><p>点击选择或拖拽 HTML 文件</p><p style="font-size:11px;color:#9CA3AF;margin-top:4px">任意 HTML 文件</p></div>
+<input type="file" id="fileInput" accept=".html" style="display:none" />
 <div class="file-info" id="fileInfo">
 <div class="row"><span class="label">文件名</span><span class="value" id="infoName">-</span></div>
 <div class="row"><span class="label">大小</span><span class="value" id="infoSize">-</span></div>
@@ -126,16 +117,19 @@ body{background:#F5F7FA;color:#1A1A2E;padding:20px;min-height:100vh;display:flex
 <div class="row"><span class="label">版本</span><span class="value" id="infoVersion">-</span></div>
 </div>
 </div>
-<input type="file" id="fileInput" accept=".html" style="display:none" />
-</div>
-<div class="card" id="checkCard" style="display:none"><div class="card-title">🔍 部署前校验</div><div class="checks check-grid" id="checks"></div></div>
 <div class="card">
 <div class="card-title">📝 部署说明</div>
 <input type="text" id="commitMsg" placeholder="本次更新说明" style="width:100%;padding:8px 12px;border:1.5px solid #E5E7EB;border-radius:6px;font-size:13px;margin-bottom:12px" />
+</div>
+</div>
+<div class="col">
+<div class="card" id="checkCard" style="display:none"><div class="card-title">🔍 部署前校验</div><div class="checks" id="checks"></div></div>
+<div class="card">
+<div class="card-title">🚀 部署</div>
 <div class="actions"><button class="btn btn-secondary" onclick="resetAll()">重置</button><button class="btn btn-primary" id="deployBtn" disabled onclick="deploy()">🚀 确认部署</button></div>
 </div>
 <div class="log" id="logBox"></div>
-<div style="text-align:center;font-size:12px;color:#9CA3AF">部署后 GitHub Pages 1-2 分钟自动更新</div>
+<div style="text-align:center;font-size:12px;color:#9CA3AF">Pages 1-2 分钟自动更新</div>
 </div>
 </div>
 </div>
