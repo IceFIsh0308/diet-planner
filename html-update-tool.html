@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>🚀 GitHub Pages 部署工具 V2.2</title>
+<title>🚀 GitHub Pages 部署工具 V2.4</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,-apple-system,sans-serif}
 body{background:#F5F7FA;color:#1A1A2E;padding:20px;min-height:100vh;display:flex;justify-content:center;transition:all .3s}
@@ -23,7 +23,7 @@ body{background:#F5F7FA;color:#1A1A2E;padding:20px;min-height:100vh;display:flex
 @keyframes spin{to{transform:rotate(360deg)}}
 .cols{display:flex;gap:14px;align-items:stretch;justify-content:center}
 .col{flex:1;min-width:0;max-width:300px;display:flex;flex-direction:column}
-.card{background:#fff;border-radius:12px;padding:18px;box-shadow:0 2px 8px rgba(0,0,0,0.06);flex:1;display:flex;flex-direction:column}
+.card{background:#fff;border-radius:12px;padding:18px;box-shadow:0 2px 8px rgba(0,0,0,0.06);flex:1;display:flex;flex-direction:column;overflow:hidden}
 .card-title{font-size:14px;font-weight:600;margin-bottom:12px;color:#374151}
 .field{margin-bottom:10px}
 .field-label{font-size:12px;color:#6B7280;margin-bottom:3px}
@@ -40,7 +40,7 @@ body{background:#F5F7FA;color:#1A1A2E;padding:20px;min-height:100vh;display:flex
 .file-drop .icon{font-size:24px;margin-bottom:4px}
 .file-drop p{color:#6B7280;font-size:12px}
 .check-list{flex:1;display:flex;flex-direction:column;justify-content:space-evenly;padding-top:4px;padding-bottom:10px}
-.check-card{display:flex;align-items:center;justify-content:center;gap:6px;padding:5px 14px;border-radius:6px;border:1px solid #E5E7EB;font-size:12px;color:#9CA3AF;background:#F9FAFB;margin:3px 0;width:fit-content;min-width:160px;box-sizing:border-box}
+.check-card{display:flex;align-items:center;justify-content:center;gap:6px;padding:5px 14px;border-radius:6px;border:1px solid #E5E7EB;font-size:12px;color:#9CA3AF;background:#F9FAFB;margin:8px 0;width:fit-content;min-width:160px;box-sizing:border-box}
 .check-card.ok{color:#2D8B46;border-color:#D1FAE5;background:#F0FDF4}
 .check-card.fail{color:#DC2626;border-color:#FEE2E2;background:#FEF2F2}
 .check-card .icon{width:16px;text-align:center;flex-shrink:0}
@@ -58,7 +58,7 @@ body{background:#F5F7FA;color:#1A1A2E;padding:20px;min-height:100vh;display:flex
 .btn-row{display:flex;gap:10px;margin-top:14px}
 .btn-row .btn{flex:1}
 textarea.commit-input{width:100%;min-height:66px;resize:vertical;padding:8px 12px;border:1.5px solid #E5E7EB;border-radius:6px;font-size:13px;font-family:inherit}
-.log{background:#1F2937;color:#D1D5DB;border-radius:8px;padding:10px;font-size:12px;font-family:'SF Mono',Monaco,monospace;max-height:200px;overflow-y:auto;margin-top:12px;display:none;flex-shrink:0}
+.log{background:#1F2937;color:#D1D5DB;border-radius:8px;padding:10px;font-size:12px;font-family:'SF Mono',Monaco,monospace;height:280px;overflow-y:auto;margin-top:12px;display:none;flex-shrink:0}
 .log.show{display:block}
 .log .line{margin:2px 0;white-space:pre-wrap}
 .log-ok{color:#4ADE80}.log-warn{color:#FBBF24}.log-err{color:#F87171}.log-info{color:#60A5FA}
@@ -80,7 +80,7 @@ textarea.commit-input{width:100%;min-height:66px;resize:vertical;padding:8px 12p
 </head>
 <body>
 <div class="app col3" id="app">
-<div class="header"><h1>🚀 GitHub Pages 部署工具 V2.2</h1><p>从零到上线，浏览器一键完成</p></div>
+<div class="header"><h1>🚀 GitHub Pages 部署工具 V2.4</h1><p>从零到上线，浏览器一键完成</p></div>
 <div id="stepBar" class="step-indicator">
 <span class="step step-pending" id="step1">1. Token</span><span class="step-arrow">→</span>
 <span class="step step-pending" id="step2">2. 配置</span><span class="step-arrow">→</span>
@@ -139,7 +139,7 @@ textarea.commit-input{width:100%;min-height:66px;resize:vertical;padding:8px 12p
 <div class="col col-deploy" id="colDeploy">
 <div class="card">
 <div class="card-title">📋 部署日志</div>
-<div class="log show" id="logBox" style="max-height:none;flex:1"></div>
+<div class="log show" id="logBox" style="height:280px;overflow-y:auto;flex:1;max-height:280px"</div>
 <div style="text-align:center;font-size:11px;color:#9CA3AF;margin-top:8px">Pages 1-2 分钟自动更新</div>
 </div>
 </div>
@@ -370,7 +370,9 @@ async function deploy(){
       log('✅ 推送成功！','ok');log('📝 Commit: '+pr2.data.commit.sha.substring(0,8),'ok');log('','info');
       const pu=pagesUrl||('https://'+owner.toLowerCase()+'.github.io/'+repo+'/');
       log('🌐 访问地址: '+pu,'ok');log('⏳ GitHub Pages 1-2 分钟后自动更新','info');
-      setStatus('status-ok','✅ 部署成功！');log('','info');log('🎉 部署完成！','ok');document.getElementById('step5').className='step step-success';
+      const fullUrl=pagesUrl||('https://'+owner.toLowerCase()+'.github.io/'+repo+'/');
+      const accessUrl=fullUrl.replace(/\/$/,'')+'/'+path;
+      setStatus('status-ok','✅ 部署成功！ '+accessUrl);log('','info');log('🎉 部署完成！','ok');document.getElementById('step5').className='step step-success';
     }else throw new Error(pr2.data.message||('HTTP '+pr2.status));
   }catch(e){
     log('❌ 部署失败: '+e.message,'err');
