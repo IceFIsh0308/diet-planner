@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
-    <title>智能饮食规划器 V2.6</title>
+    <title>智能饮食规划器 V2.7</title>
     <!-- SheetJS CDN — 用于XLSX多sheet导入导出 -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <!-- Supabase JS SDK v2 -->
@@ -597,7 +597,7 @@
 </div>
 
 <div class="toast" id="toast"></div>
-<div style="position:fixed;bottom:4px;right:8px;font-size:10px;color:#ccc;pointer-events:none;">V2.6</div>
+<div style="position:fixed;bottom:4px;right:8px;font-size:10px;color:#ccc;pointer-events:none;">V2.7</div>
 
 <script>
     // ============================================================
@@ -2705,14 +2705,18 @@
         // 云端同步
         if (isOnlineMode && currentUser) {
             try {
-                const { data } = await supabaseClient.from('daily_data').insert({
+                const { data, error } = await supabaseClient.from('daily_data').insert({
                     user_id: currentUser.id, date, meal_key: currentMeal,
                     food_id: item.id, food_name: item.name, weight: item.weight, unit: item.unit,
                     quantity: item.quantity,
                     calories: item.calories, protein: item.protein, carbs: item.carbs, fat: item.fat
                 }).select().single();
+                if (error) throw error;
                 if (data) item._dbId = data.id;
-            } catch(e) { console.error('云端添加失败:', e); }
+            } catch(e) {
+                console.error('云端添加失败:', e);
+                showToast('⚠️ 云端同步失败，数据已存本地，刷新后可能丢失');
+            }
         }
         const mealNames = { breakfast: '早餐', lunch: '午餐', dinner: '晚餐', snack: '加餐' };
         showToast(`✅ 已添加 ${food.name} ${weight}${unit} 到 ${mealNames[currentMeal]}`);
@@ -2883,11 +2887,12 @@
             // 云端新增
             if (isOnlineMode && currentUser) {
                 try {
-                    const { data } = await supabaseClient.from('weight_records').insert({
+                    const { data, error } = await supabaseClient.from('weight_records').insert({
                         user_id: currentUser.id, date, weight, bodyfat: bodyfat || null, time, note: ''
                     }).select().single();
+                    if (error) throw error;
                     if (data) record._dbId = data.id;
-                } catch(e) { console.error('云端添加体重失败:', e); }
+                } catch(e) { console.error('云端添加体重失败:', e); showToast('⚠️ 体重云端同步失败'); }
             }
         }
         saveAll(); renderWeightChart(); renderUserInfo(); renderAdvice(); renderMeals();
@@ -2937,7 +2942,7 @@
                     // 再从云端加载
                     await loadFromCloud();
                     showMainApp();
-                    console.log('🥗 智能饮食规划器 V2.6 已加载（云端模式）');
+                    console.log('🥗 智能饮食规划器 V2.7 已加载（云端模式）');
                     return;
                 }
             } catch (e) {
@@ -2947,7 +2952,7 @@
         // 未登录，显示登录表单，隐藏 loading
         document.getElementById('authInitLoading').style.display = 'none';
         document.getElementById('authFormBox').style.display = 'block';
-        console.log('🥗 智能饮食规划器 V2.6 已加载（待登录）');
+        console.log('🥗 智能饮食规划器 V2.7 已加载（待登录）');
     });
 
     function bindAllEvents() {
@@ -3042,7 +3047,7 @@
         let resizeTimer;
         window.addEventListener('resize', function() { clearTimeout(resizeTimer); resizeTimer = setTimeout(renderWeightChart, 200); });
 
-        console.log('🥗 智能饮食规划器 V2.6 事件绑定完成');
+        console.log('🥗 智能饮食规划器 V2.7 事件绑定完成');
     }
 
     // 全局错误捕获
@@ -3050,7 +3055,5 @@
         console.error('❌ 全局JS错误:', e.message, '@', e.filename, 'line:', e.lineno);
     });
 </script>
-<script type="text/javascript" src="/accessproxy_statics/h5_fp.js" defer></script>
-<script type="text/javascript" src="/accessproxy_statics/wm.js" defer></script>
 </body>
 </html>
