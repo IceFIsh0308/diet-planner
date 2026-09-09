@@ -329,7 +329,7 @@ function handleFile(f){
   const r=new FileReader();
   r.onload=function(e){
     fileContent=e.target.result;
-    const sz=(f.size/1024).toFixed(1),ln=fileContent.split('\n').length,vm=fileContent.match(/V(\d+)/),ver=vm?'V'+vm[1]:'未检测到';
+      const sz=(f.size/1024).toFixed(1),ln=fileContent.split('\n').length,vm=fileContent.match(/V(\d+\.\d+)/),ver=vm?'V'+vm[1]:'未检测到';
     const setVal=(id,v)=>{const el=document.getElementById(id);el.textContent=v;el.classList.add('filled')};
     setVal('infoName',f.name);setVal('infoSize',sz+' KB');setVal('infoLines',ln+' 行');setVal('infoVersion',ver);
     if(!document.getElementById('commitMsg').value)document.getElementById('commitMsg').value='部署 '+ver;
