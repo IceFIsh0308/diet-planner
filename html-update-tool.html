@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>🚀 GitHub Pages 部署工具 V2.7</title>
+<title>🚀 GitHub Pages 部署工具 V3.0</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,-apple-system,sans-serif}
 body{background:#F5F7FA;color:#1A1A2E;padding:20px;min-height:100vh;display:flex;justify-content:center;transition:all .3s}
@@ -80,7 +80,7 @@ textarea.commit-input{width:100%;min-height:66px;resize:vertical;padding:8px 12p
 </head>
 <body>
 <div class="app col3" id="app">
-<div class="header"><h1>🚀 GitHub Pages 部署工具 V2.7</h1><p>从零到上线，浏览器一键完成</p></div>
+<div class="header"><h1>🚀 GitHub Pages 部署工具 V3.0</h1><p>从零到上线，浏览器一键完成</p></div>
 <div id="stepBar" class="step-indicator">
 <span class="step step-pending" id="step1">1. Token</span><span class="step-arrow">→</span>
 <span class="step step-pending" id="step2">2. 配置</span><span class="step-arrow">→</span>
@@ -333,8 +333,45 @@ function handleFile(f){
     const setVal=(id,v)=>{const el=document.getElementById(id);el.textContent=v;el.classList.add('filled')};
     setVal('infoName',f.name);setVal('infoSize',sz+' KB');setVal('infoLines',ln+' 行');setVal('infoVersion',ver);
     if(!document.getElementById('commitMsg').value)document.getElementById('commitMsg').value='部署 '+ver;
+    // 自动匹配部署路径：去掉版本号后匹配仓库已有文件
+    autoMatchPath(f.name);
     markStep(3);runChecks(fileContent)
   };r.readAsText(f)
+}
+function autoMatchPath(uploadName){
+  const pathSel=document.getElementById('cfgPath');
+  if(pathSel.disabled){return}
+  // 去掉版本号：html_creater_V1.3.html -> html_creater.html
+  const baseName=uploadName.replace(/_V\d+\.\d+\.html$/i,'.html').replace(/_V\d+\.html$/i,'.html');
+  // 先精确匹配
+  if(fileList.includes(baseName)){
+    pathSel.value=baseName;
+    setStatus('status-ok','✅ 已自动匹配路径: '+baseName);
+    return;
+  }
+  // 模糊匹配：路径包含去掉版本号后的文件名前缀
+  const prefix=baseName.replace(/\.html$/i,'');
+  const matched=fileList.find(p=>p.includes(prefix));
+  if(matched){
+    pathSel.value=matched;
+    setStatus('status-ok','✅ 已自动匹配路径: '+matched);
+    return;
+  }
+  // 匹配不上，提示自动创建
+  if(confirm('未匹配到已有文件，是否自动创建 '+baseName+' ？')){
+    // 检查是否已有该选项
+    let exists=false;
+    for(const opt of pathSel.options){if(opt.value===baseName){exists=true;break}}
+    if(!exists){
+      const opt=document.createElement('option');
+      opt.value=baseName;opt.textContent=baseName+' (新)';
+      pathSel.insertBefore(opt,pathSel.lastChild);
+    }
+    pathSel.value=baseName;
+    setStatus('status-warn','⚠️ 将创建新文件: '+baseName);
+  }else{
+    setStatus('status-warn','请手动选择部署路径');
+  }
 }
 function startDeploy(){
   document.getElementById('logBox').innerHTML='';
