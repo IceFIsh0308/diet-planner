@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>🛠️ HTML 生成器 V1.3</title>
+<title>🛠️ HTML 生成器 V1.4</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,-apple-system,sans-serif}
 body{background:#F5F7FA;color:#1A1A2E;min-height:100vh;display:flex;justify-content:center;padding:20px}
@@ -27,6 +27,13 @@ body{background:#F5F7FA;color:#1A1A2E;min-height:100vh;display:flex;justify-cont
 .name-row{display:flex;align-items:center;gap:0}
 .name-row .name-input{flex:1;border-radius:10px 0 0 10px}
 .name-row .ext{padding:12px 14px;background:#F3F4F6;border:1.5px solid #E5E7EB;border-left:none;border-radius:0 10px 10px 0;font-size:14px;color:#6B7280;font-weight:500}
+.toolbar{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.toolbar .name-row{flex:1}
+.toolbar .btn-preview{padding:8px 16px;border:1.5px solid #2D8B46;border-radius:8px;background:#fff;color:#2D8B46;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;white-space:nowrap}
+.toolbar .btn-preview:hover{background:#F0FDF4}
+.toolbar .btn-download{padding:8px 14px;border:none;border-radius:8px;background:#2D8B46;color:#fff;font-size:13px;font-weight:600;cursor:pointer;transition:background .2s;white-space:nowrap;flex:0 0 auto}
+.toolbar .btn-download:hover{background:#246B38}
+.toolbar .btn-download:active{transform:scale(0.99)}
 .btn-row{display:flex;gap:10px;margin-top:8px}
 .btn-download{flex:1;padding:14px;border:none;border-radius:10px;background:#2D8B46;color:#fff;font-size:16px;font-weight:600;cursor:pointer;transition:background .2s}
 .btn-download:hover{background:#246B38}
@@ -51,7 +58,7 @@ body{background:#F5F7FA;color:#1A1A2E;min-height:100vh;display:flex;justify-cont
 <body>
 <div class="app" id="app">
 <div class="header">
-<h1>🛠️ HTML 生成器 V1.3</h1>
+<h1>🛠️ HTML 生成器 V1.4</h1>
 <p>粘贴代码，命名文件，一键下载</p>
 </div>
 <div class="steps">
@@ -63,22 +70,18 @@ body{background:#F5F7FA;color:#1A1A2E;min-height:100vh;display:flex;justify-cont
 </div>
 <div class="main-area">
 <div class="left-area">
-<div class="form-group">
-<label class="form-label">📝 HTML 代码</label>
-<textarea class="code-input" id="codeInput" placeholder="在此粘贴你的 HTML 代码..." spellcheck="false"></textarea>
-<div class="form-hint">支持完整 HTML 文档或代码片段</div>
-</div>
-<div class="form-group">
-<label class="form-label">📄 文件名称</label>
+<div class="toolbar">
 <div class="name-row">
 <input type="text" class="name-input" id="fileName" placeholder="输入文件名" spellcheck="false" />
 <span class="ext">.html</span>
 </div>
-<div class="form-hint">下载文件将命名为：你的输入.html</div>
-</div>
-<div class="btn-row">
 <button class="btn-preview" onclick="togglePreview()">👁️ 预览</button>
-<button class="btn-download" onclick="downloadHTML()">⬇️ 下载 HTML 文件</button>
+<button class="btn-download" onclick="downloadHTML()">⬇️ 下载</button>
+</div>
+<div class="form-group">
+<label class="form-label">📝 HTML 代码</label>
+<textarea class="code-input" id="codeInput" placeholder="在此粘贴你的 HTML 代码..." spellcheck="false"></textarea>
+<div class="form-hint">支持完整 HTML 文档或代码片段</div>
 </div>
 </div>
 <div class="preview-wrap" id="previewWrap">
