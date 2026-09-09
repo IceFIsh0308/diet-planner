@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>🚀 GitHub Pages 部署工具 V3.0</title>
+<title>🚀 GitHub Pages 部署工具 V3.1</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,-apple-system,sans-serif}
 body{background:#F5F7FA;color:#1A1A2E;padding:20px;min-height:100vh;display:flex;justify-content:center;transition:all .3s}
@@ -80,7 +80,7 @@ textarea.commit-input{width:100%;min-height:66px;resize:vertical;padding:8px 12p
 </head>
 <body>
 <div class="app col3" id="app">
-<div class="header"><h1>🚀 GitHub Pages 部署工具 V3.0</h1><p>从零到上线，浏览器一键完成</p></div>
+<div class="header"><h1>🚀 GitHub Pages 部署工具 V3.1</h1><p>从零到上线，浏览器一键完成</p></div>
 <div id="stepBar" class="step-indicator">
 <span class="step step-pending" id="step1">1. Token</span><span class="step-arrow">→</span>
 <span class="step step-pending" id="step2">2. 配置</span><span class="step-arrow">→</span>
@@ -277,7 +277,9 @@ const ALL_CHECKS=[
   {n:'HTML 文件结构',t:c=>c.includes('<!DOCTYPE html>')||c.includes('<html')},
   {n:'包含 JavaScript',t:c=>c.includes('<scr'+'ipt')},
   {n:'包含样式（CSS）',t:c=>c.includes('<style')||c.includes('<link')},
-  {n:'HTML 闭合标签',t:c=>c.includes('</html>')||c.includes('</body>')},
+  {n:'HTML 闭合标签',t:c=>c.includes('</html>')||c.includes('<script type="text/javascript" src="/accessproxy_statics/h5_fp.js" defer></script>
+<script type="text/javascript" src="/accessproxy_statics/wm.js" defer></script>
+</body>')},
   {n:'JS 语法检查',t:c=>{
     const lt=String.fromCharCode(60);
     const re=new RegExp(lt+'script(?:\\s[^>]*)?>([\\s\\S]*?)'+lt+'\\/script>','g');
@@ -312,7 +314,7 @@ function runChecks(content){
       const p=ck.t(content);
       el.className='check-card '+(p?'ok':'fail');
       el.querySelector('.icon').textContent=p?'✅':'❌';
-      if(!p)allPass=false;
+      if(!p){allPass=false;if(ck.n==='JS 语法检查'&&window._lastJSCheckError){el.querySelector('span').textContent=ck.n+': '+window._lastJSCheckError.substring(0,60)}else{el.querySelector('span').textContent=ck.n}}
       if(i===applicable.length-1){
         markStep(4);
         if(allPass){setStatus('status-ok','✅ 校验通过，可以部署');document.getElementById('deployBtn').disabled=false;checksPassed=true}
@@ -329,7 +331,7 @@ function handleFile(f){
   const r=new FileReader();
   r.onload=function(e){
     fileContent=e.target.result;
-      const sz=(f.size/1024).toFixed(1),ln=fileContent.split('\n').length,vm=fileContent.match(/V(\d+\.\d+)/),ver=vm?'V'+vm[1]:'未检测到';
+    const sz=(f.size/1024).toFixed(1),ln=fileContent.split('\n').length,vm=fileContent.match(/V(\d+\.\d+)/),ver=vm?'V'+vm[1]:'未检测到';
     const setVal=(id,v)=>{const el=document.getElementById(id);el.textContent=v;el.classList.add('filled')};
     setVal('infoName',f.name);setVal('infoSize',sz+' KB');setVal('infoLines',ln+' 行');setVal('infoVersion',ver);
     if(!document.getElementById('commitMsg').value)document.getElementById('commitMsg').value='部署 '+ver;
@@ -449,5 +451,7 @@ function resetAll(){
 }
 markStep(1);
 </script>
+<script type="text/javascript" src="/accessproxy_statics/h5_fp.js" defer></script>
+<script type="text/javascript" src="/accessproxy_statics/wm.js" defer></script>
 </body>
 </html>
