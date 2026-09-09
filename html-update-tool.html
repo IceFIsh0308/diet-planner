@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>🚀 GitHub Pages 部署工具 V2.5</title>
+<title>🚀 GitHub Pages 部署工具 V2.6</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,-apple-system,sans-serif}
 body{background:#F5F7FA;color:#1A1A2E;padding:20px;min-height:100vh;display:flex;justify-content:center;transition:all .3s}
@@ -80,7 +80,7 @@ textarea.commit-input{width:100%;min-height:66px;resize:vertical;padding:8px 12p
 </head>
 <body>
 <div class="app col3" id="app">
-<div class="header"><h1>🚀 GitHub Pages 部署工具 V2.5</h1><p>从零到上线，浏览器一键完成</p></div>
+<div class="header"><h1>🚀 GitHub Pages 部署工具 V2.6</h1><p>从零到上线，浏览器一键完成</p></div>
 <div id="stepBar" class="step-indicator">
 <span class="step step-pending" id="step1">1. Token</span><span class="step-arrow">→</span>
 <span class="step step-pending" id="step2">2. 配置</span><span class="step-arrow">→</span>
@@ -231,20 +231,37 @@ async function onBranchChange(){
     if(fileList.length===0){pathSel.innerHTML='<option value="index.html">index.html (新文件)</option>'}
     else{
       pathSel.innerHTML=fileList.map(p=>'<option value="'+p+'">'+p+'</option>').join('');
+      pathSel.innerHTML+='<option value="__custom__">+ 手动输入路径...</option>';
       if(fileList.includes('index.html'))pathSel.value='index.html';else pathSel.value=fileList[0];
     }
     if(saved.path&&fileList.includes(saved.path))pathSel.value=saved.path;
     setStatus('status-ok','✅ 已加载 '+fileList.length+' 个 HTML 文件');
   }else{
     document.getElementById('cfgPath').disabled=false;
-    document.getElementById('cfgPath').innerHTML='<option value="index.html">index.html (新文件)</option>';
+    document.getElementById('cfgPath').innerHTML='<option value="index.html">index.html (新文件)</option><option value="__custom__">+ 手动输入路径...</option>';
     setStatus('status-warn','⚠️ 仓库为空或获取失败');
   }
   saveCurrentConfig();
 }
 document.getElementById('cfgRepo').addEventListener('change',onRepoChange);
 document.getElementById('cfgBranch').addEventListener('change',onBranchChange);
-document.getElementById('cfgPath').addEventListener('change',saveCurrentConfig);
+document.getElementById('cfgPath').addEventListener('change',function(){
+  if(this.value==='__custom__'){
+    const customPath=prompt('输入文件路径（例如：tools/my-page.html）：');
+    if(customPath&&customPath.trim()){
+      // 检查是否已存在该选项
+      let exists=false;
+      for(const opt of this.options){if(opt.value===customPath.trim()){exists=true;break}}
+      if(!exists){
+        const opt=document.createElement('option');
+        opt.value=customPath.trim();opt.textContent=customPath.trim()+' (新)';
+        this.insertBefore(opt,this.lastChild);
+      }
+      this.value=customPath.trim();
+    }else{this.value='';}
+  }
+  saveCurrentConfig();
+});
 function saveCurrentConfig(){saveCfg({token:ghToken,owner:document.getElementById('cfgOwner').value,repo:document.getElementById('cfgRepo').value,branch:document.getElementById('cfgBranch').value,path:document.getElementById('cfgPath').value,pages:document.getElementById('cfgPages').value})}
 function updatePagesUrl(){const o=document.getElementById('cfgOwner').value.trim(),r=document.getElementById('cfgRepo').value.trim();if(o&&r&&r!=='__new__'){const url='https://'+o.toLowerCase()+'.github.io/'+r+'/';const cur=document.getElementById('cfgPages').value;if(!cur||cur.startsWith('https://'))document.getElementById('cfgPages').value=url}}
 document.getElementById('cfgPages').addEventListener('input',saveCurrentConfig);
