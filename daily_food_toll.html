@@ -1505,10 +1505,10 @@
             const nutEl = document.getElementById('mealNut-' + key);
             if (nutEl) {
                 if (mealTotal.calories > 0) {
-                    nutEl.innerHTML = '<span>🔥' + Math.round(mealTotal.calories) + 'kcal</span>' +
-                        '<span>🍚' + Math.round(mealTotal.carbs) + 'g</span>' +
-                        '<span>🥚' + Math.round(mealTotal.protein) + 'g</span>' +
-                        '<span>🥑' + Math.round(mealTotal.fat) + 'g</span>';
+                    nutEl.innerHTML = '<span>🔥' + Math.round(mealTotal.calories) + '</span>' +
+                        '<span>🍚' + Math.round(mealTotal.carbs) + '</span>' +
+                        '<span>🥚' + Math.round(mealTotal.protein) + '</span>' +
+                        '<span>🥑' + Math.round(mealTotal.fat) + '</span>';
                 } else { nutEl.innerHTML = ''; }
             }
             container.innerHTML = html;
