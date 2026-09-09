@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>🚀 GitHub Pages 部署工具 V2.6</title>
+<title>🚀 GitHub Pages 部署工具 V2.7</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,-apple-system,sans-serif}
 body{background:#F5F7FA;color:#1A1A2E;padding:20px;min-height:100vh;display:flex;justify-content:center;transition:all .3s}
@@ -80,7 +80,7 @@ textarea.commit-input{width:100%;min-height:66px;resize:vertical;padding:8px 12p
 </head>
 <body>
 <div class="app col3" id="app">
-<div class="header"><h1>🚀 GitHub Pages 部署工具 V2.6</h1><p>从零到上线，浏览器一键完成</p></div>
+<div class="header"><h1>🚀 GitHub Pages 部署工具 V2.7</h1><p>从零到上线，浏览器一键完成</p></div>
 <div id="stepBar" class="step-indicator">
 <span class="step step-pending" id="step1">1. Token</span><span class="step-arrow">→</span>
 <span class="step step-pending" id="step2">2. 配置</span><span class="step-arrow">→</span>
@@ -282,7 +282,7 @@ const ALL_CHECKS=[
     const lt=String.fromCharCode(60);
     const re=new RegExp(lt+'script(?:\\s[^>]*)?>([\\s\\S]*?)'+lt+'\\/script>','g');
     const s=c.match(re)||[];let hasCode=false;
-    for(const x of s){const m=x.match(new RegExp(lt+'script(?:\\s[^>]*)?>([\\s\\S]*?)'+lt+'\\/script>'));const code=m&&m[1]?m[1]:'';if(code.trim().length>50){hasCode=true;try{new Function(code)}catch(e){return false}}}
+    for(const x of s){const m=x.match(new RegExp(lt+'script(?:\\s[^>]*)?>([\\s\\S]*?)'+lt+'\\/script>'));const code=m&&m[1]?m[1]:'';if(code.trim().length>50){hasCode=true;try{new Function('return async function(){'+code+'}')()}catch(e){return false}}}
     return hasCode||s.length>0;
   }},
   {n:'Supabase SDK 引入',t:c=>c.includes('supabase-js')&&c.includes('supabase.createClient'),cond:c=>c.includes('supabase')||c.includes('饮食规划')},
