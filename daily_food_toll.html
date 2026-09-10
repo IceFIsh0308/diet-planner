@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
-    <title>智能饮食规划器 V2.8</title>
+    <title>智能饮食规划器 V3.0</title>
     <!-- SheetJS CDN — 用于XLSX多sheet导入导出 -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <!-- Supabase JS SDK v2 -->
@@ -222,6 +222,7 @@
         .meal-add-area .ma-suggest::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
         .meal-add-area .ma-suggest .ms-item { padding: 3px 6px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); font-size: 10px; }
         .meal-add-area .ma-suggest .ms-item:hover { background: var(--primary-bg); }
+        .meal-add-area .ma-suggest .ms-item.ms-selected { background: var(--primary-bg); border-color: var(--primary); }
         .meal-add-area .ma-suggest .ms-item .ms-info { color: var(--text-secondary); font-size: 9px; }
         .meal-add-area .ma-suggest .ms-item .ms-custom-badge { background: #FEF3C7; color: #92400E; font-size: 7px; padding: 1px 3px; border-radius: 8px; margin-left: 2px; }
         .meal-add-area .ma-suggest .ms-create { padding: 4px 6px; cursor: pointer; border-bottom: 1px solid var(--border); font-size: 10px; background: #FEFCE8; color: var(--primary); font-weight: 600; }
@@ -422,10 +423,8 @@
                     <button class="btn btn-primary btn-sm" id="addWeightBtn">记录</button>
                 </div>
                 <div class="weight-filter">
-                    <button class="btn btn-outline btn-sm weight-days-btn active" data-days="7">7天</button>
-                    <button class="btn btn-outline btn-sm weight-days-btn" data-days="14">14天</button>
-                    <input type="number" id="weightDays" value="7" min="3" max="90" style="width:55px;" placeholder="自定义" title="自定义天数" />
                     <span class="text-secondary" style="font-size:10px;margin-left:4px;">(优先空腹) · 双击图表可放大</span>
+                    <input type="number" id="weightDays" value="14" min="3" max="90" style="width:55px;margin-left:auto;" placeholder="天数" title="自定义天数" />
                 </div>
                 <div class="weight-chart-container" id="weightChartContainer">
                     <div class="weight-chart-label">📈 体重 (kg)</div>
@@ -450,9 +449,7 @@
                 <label>结束:</label>
                 <input type="date" id="histEnd" />
                 <button class="btn btn-primary btn-sm" id="histRefreshBtn">查询</button>
-                <button class="btn btn-outline btn-sm" id="histResetBtn">重置(近7天)</button>
                 <button class="btn btn-outline btn-sm" id="histSortBtn">📅 降序</button>
-                <span class="text-secondary" style="font-size:10px;">默认近7天</span>
             </div>
             <div class="hist-table-wrap" id="histTableWrap">
                 <table class="hist-table" id="histTable">
@@ -460,7 +457,7 @@
                     <tbody id="histBody"></tbody>
                 </table>
             </div>
-            <div class="text-secondary" style="font-size:10px;margin-top:4px;">* 实际缺口 = 目标 - 摄入（正数表示有缺口）<br />* 历史数据根据饮食记录自动同步计算</div>
+            
         </div>
 
         <div class="card card-right">
@@ -471,6 +468,7 @@
                 <label>结束:</label>
                 <input type="date" id="weightHistEnd" />
                 <button class="btn btn-primary btn-sm" id="weightHistRefreshBtn">查询</button>
+                <button class="btn btn-outline btn-sm" id="weightHistResetBtn">重置</button>
             </div>
             <div class="hist-table-wrap" id="weightHistTableWrap">
                 <table class="hist-table" id="weightHistTable">
@@ -601,7 +599,7 @@
 </div>
 
 <div class="toast" id="toast"></div>
-<div style="position:fixed;bottom:4px;right:8px;font-size:10px;color:#ccc;pointer-events:none;">V2.8</div>
+<div style="position:fixed;bottom:4px;right:8px;font-size:10px;color:#ccc;pointer-events:none;">V3.0</div>
 
 <script>
     // ============================================================
@@ -1181,6 +1179,241 @@
         { id: 'almond', name: '杏仁', calories: 579, protein: 21, carbs: 22, fat: 49, defaultUnit: '克', unitWeight: 100, unitType: '克' },
     ];
 
+    // 拼音表：[食物名, 首字母缩写, 完整拼音]
+    const PINYIN_DATA = [
+        ['鸡胸肉（生）','jxr','jixiongrou'],['鸡胸肉','jxr','jixiongrou'],
+        ['鸡腿肉（去皮，生）','jtr','jiturou'],['鸡腿肉','jtr','jiturou'],
+        ['牛肉（瘦肉，生）','nr','niurou'],['牛肉','nr','niurou'],
+        ['猪瘦肉（生）','zr','zhurou'],['猪肉','zr','zhurou'],['瘦肉','sr','shourou'],
+        ['三文鱼（生）','swy','sanwenyu'],['三文鱼','swy','sanwenyu'],
+        ['鸡蛋（全蛋）','jd','jidan'],['鸡蛋','jd','jidan'],
+        ['鸡蛋（蛋白）','db','danbai'],['蛋白','db','danbai'],
+        ['豆腐','df','doufu'],
+        ['米饭（熟）','mfs','mifanshu'],['米饭','mf','mifan'],['米饭（生）','mfs','mifanshu'],
+        ['燕麦片（干）','ymp','yanmaipian'],['燕麦','ym','yanmai'],['燕麦片','ymp','yanmaipian'],
+        ['全麦面包','qmbb','quanmaimianbao'],['白面包','bmb','baimianbao'],['面包','mb','mianbao'],
+        ['红薯（生）','hss','hongshusheng'],['红薯','hs','hongshu'],
+        ['土豆（生）','tds','tudousheng'],['土豆','td','tudou'],
+        ['香蕉','xj','xiangjiao'],['苹果','pg','pingguo'],
+        ['橙子','cz','chengzi'],['葡萄','pt','putao'],['草莓','cm','caomei'],['西瓜','xg','xigua'],
+        ['西兰花（生）','xlhs','xilanhua'],['西兰花','xlh','xilanhua'],
+        ['菠菜（生）','bcs','bocaisheng'],['菠菜','bc','bocai'],
+        ['番茄','fq','fanqie'],['黄瓜','hg','huanggua'],['胡萝卜','hlg','huluobo'],
+        ['全脂牛奶','qznn','quanzhiniunai'],['牛奶','nn','niunai'],
+        ['希腊酸奶','xlsn','xilasuannai'],['酸奶','sn','suannai'],
+        ['植物油','zwu','zhiwuyou'],['油','y','you'],['杏仁','xr','xingren'],
+        ['去皮','qp','qupi'],['生','s','sheng'],['熟','sh','shou']
+    ];
+    const PINYIN_MAP = {};
+    PINYIN_DATA.forEach(([name, abbr, full]) => {
+        if (!PINYIN_MAP[name]) PINYIN_MAP[name] = { abbr, full };
+    });
+
+    // 前后鼻音模糊：z/zh, c/ch, s/sh, ng/n
+    function fuzzyPinyin(p) {
+        return p.replace(/zh/g,'z').replace(/ch/g,'c').replace(/sh/g,'s').replace(/ng/g,'n');
+    }
+
+    function matchPinyin(query, name) {
+        const q = query.toLowerCase().trim();
+        if (!q) return false;
+        // 直接中文匹配
+        if (name.includes(q)) return true;
+        // 预置食物拼音匹配
+        for (const [key, py] of Object.entries(PINYIN_MAP)) {
+            if (name.includes(key)) {
+                if (py.abbr.startsWith(q)) return true;       // 首字母
+                if (py.full.startsWith(q)) return true;       // 全拼
+                if (fuzzyPinyin(py.full).startsWith(fuzzyPinyin(q))) return true;  // 模糊全拼
+                if (fuzzyPinyin(py.abbr).startsWith(fuzzyPinyin(q))) return true; // 模糊首字母
+            }
+        }
+        // 自定义食物：实时生成拼音匹配
+        const customPy = getCustomPinyin(name);
+        if (customPy.abbr) {
+            if (customPy.abbr.startsWith(q)) return true;
+            if (customPy.full.startsWith(q)) return true;
+            if (fuzzyPinyin(customPy.full).startsWith(fuzzyPinyin(q))) return true;
+            if (fuzzyPinyin(customPy.abbr).startsWith(fuzzyPinyin(q))) return true;
+        }
+        return false;
+    }
+    // 简易中文拼音生成（用于自定义食物）
+    // 常用食物相关汉字拼音表
+    const CHAR_PINYIN = {
+        '鸡':'ji','胸':'xiong','肉':'rou','腿':'tui','牛':'niu','猪':'zhu','瘦':'shou','三':'san',
+        '文':'wen','鱼':'yu','蛋':'dan','白':'bai','豆':'dou','腐':'fu','米':'mi','饭':'fan',
+        '燕':'yan','麦':'mai','面':'mian','包':'bao','红':'hong','薯':'shu','土':'tu','香':'xiang',
+        '蕉':'jiao','苹':'ping','果':'guo','橙':'cheng','子':'zi','葡':'pu','萄':'tao','草':'cao',
+        '莓':'mei','西':'xi','瓜':'gua','兰':'lan','花':'hua','菠':'bo','菜':'cai','番':'fan',
+        '茄':'qie','黄':'huang','瓜':'gua','胡':'hu','萝':'luo','卜':'bo','全':'quan','脂':'zhi',
+        '牛':'niu','奶':'nai','希':'xi','腊':'la','酸':'suan','植':'zhi','物':'wu','油':'you',
+        '杏':'xing','仁':'ren','去':'qu','皮':'pi','生':'sheng','熟':'shou','瘦':'shou',
+        '水':'shui','炒':'chao','煮':'zhu','蒸':'zheng','烤':'kao','炸':'zha','煎':'jian',
+        '拌':'ban','凉':'liang','泡':'pao','干':'gan','鲜':'xian','嫩':'nen','老':'lao',
+        '肥':'fei','皮':'pi','骨':'gu','汤':'tang','粥':'zhou','粉':'fen','面':'mian',
+        '条':'tiao','饺':'jiao','子':'zi','饼':'bing','糕':'gao','点':'dian','心':'xin',
+        '巧':'qiao','克':'ke','力':'li','糖':'tang','盐':'yan','酱':'jiang','醋':'cu',
+        '辣':'la','椒':'jiao','蒜':'suan','葱':'cong','姜':'jiang','菜':'cai','心':'xin',
+        '奶':'nai','茶':'cha','咖':'ka','啡':'fei','豆':'dou','浆':'jiang','橙':'cheng',
+        '汁':'zhi','可':'ke','乐':'le','酒':'jiu','啤':'pi','矿':'kuang','泉':'quan',
+        '虾':'xia','蟹':'xie','贝':'bei','鱿':'you','章':'zhang','海':'hai','带':'dai',
+        '紫':'zi','菜':'cai','木':'mu','耳':'er','香':'xiang','菇':'gu','金':'jin','针':'zhen',
+        '冬':'dong','蘑':'mo','松':'song','仁':'ren','核':'he','桃':'tao','腰':'yao',
+        '花':'hua','生':'sheng','瓜':'gua','子':'zi','玉':'yu','米':'mi','高':'gao','粱':'liang',
+        '小':'xiao','米':'mi','糙':'cao','米':'mi','黑':'hei','米':'mi','糯':'nuo','米':'mi',
+        '荞':'qiao','麦':'mai','藜':'li','麦':'mai','山':'shan','药':'yao','莲':'lian','藕':'ou',
+        '百':'bai','合':'he','银':'yin','耳':'er','红':'hong','枣':'zao','桂':'gui','圆':'yuan',
+        '芒':'mang','果':'guo','榴':'liu','莲':'lian','菠':'bo','萝':'luo','蜜':'mi','柚':'you',
+        '橘':'ju','柑':'gan','柠':'ning','檬':'meng','梨':'li','桃':'tao','李':'li','梅':'mei',
+        '樱':'ying','桃':'tao','猕':'mi','猴':'hou','桃':'tao','蓝':'lan','莓':'mei','桑':'sang',
+        '葚':'shen','石':'shi','榴':'liu','火':'huo','龙':'long','果':'guo','牛':'niu',
+        '酸':'suan','奶':'nai','乳':'ru','酪':'lao','黄':'huang','油':'you','奶':'nai',
+        '酪':'lao','巧':'qiao','克':'ke','力':'li','饼':'bing','干':'gan','蛋':'dan','糕':'gao',
+        '面':'mian','包':'bao','馒':'man','头':'tou','烧':'shao','麦':'mai','包':'bao',
+        '子':'zi','卷':'juan','饼':'bing','披':'pi','萨':'sa','汉':'han','堡':'bao',
+        '三':'san','明':'ming','治':'zhi','热':'re','狗':'gou','薯':'shu','条':'tiao',
+        '鸡':'ji','块':'kuai','翅':'chi','腿':'tui','排':'pai','骨':'gu','牛':'niu',
+        '排':'pai','猪':'zhu','排':'pai','五':'wu','花':'hua','肉':'rou','里':'li',
+        '脊':'ji','梅':'mei','菜':'cai','扣':'kou','肉':'rou','红':'hong','烧':'shao',
+        '清':'qing','蒸':'zheng','白':'bai','切':'qie','卤':'lu','味':'wei','酱':'jiang',
+        '鸭':'ya','鹅':'e','羊':'yang','肉':'rou','兔':'tu','肉':'rou','驴':'lv','肉':'rou',
+        '狗':'gou','肉':'rou','田':'tian','鸡':'ji','蛙':'wa','甲':'jia','鱼':'yu',
+        '鲫':'ji','鲤':'li','草':'cao','鱼':'yu','鲈':'lu','鱼':'yu','鳕':'xue','鱼':'yu',
+        '金':'jin','枪':'qiang','鱼':'yu','沙':'sha','丁':'ding','鱼':'yu','带':'dai',
+        '鱼':'yu','墨':'mo','鱼':'yu','章':'zhang','鱼':'yu','鲍':'bao','鱼':'yu','海':'hai',
+        '参':'shen','鱼':'yu','翅':'chi','海':'hai','蜇':'zhe','紫':'zi','菜':'cai','海':'hai',
+        '带':'dai','海':'hai','苔':'tai','裙':'qun','带':'dai','菜':'cai','海':'hai',
+        '藻':'zao','羊':'yang','肚':'du','牛':'niu','肚':'du','毛':'mao','肚':'du','黄':'huang',
+        '喉':'hou','百':'bai','叶':'ye','鸭':'ya','肠':'chang','鹅':'e','肠':'chang','牛':'niu',
+        '百':'bai','叶':'ye','千':'qian','张':'zhang','猪':'zhu','肠':'chang','粉':'fen',
+        '肝':'gan','心':'xin','腰':'yao','花':'hua','猪':'zhu','脑':'nao','鸭':'ya','舌':'she',
+        '鸡':'ji','爪':'zhua','鸭':'ya','掌':'zhang','猪':'zhu','蹄':'ti','牛':'niu','筋':'jin',
+        '肉':'rou','皮':'pi','冻':'dong','鸡':'ji','丝':'si','凉':'liang','拌':'ban','拍':'pai',
+        '黄':'huang','瓜':'gua','蒜':'suan','泥':'ni','白':'bai','灼':'zhuo','虾':'xia','清':'qing',
+        '炒':'chao','时':'shi','蔬':'shu','上':'shang','汤':'tang','奶':'nai','白':'bai',
+        '西':'xi','兰':'lan','花':'hua','炒':'chao','肉':'rou','番':'fan','茄':'qie','炒':'chao',
+        '蛋':'dan','土':'tu','豆':'dou','丝':'si','胡':'hu','萝':'luo','卜':'bo','炖':'dun',
+        '牛':'niu','酸':'suan','辣':'la','汤':'tang','麻':'ma','婆':'po','豆':'dou','腐':'fu',
+        '宫':'gong','保':'bao','鸡':'ji','丁':'ding','鱼':'yu','香':'xiang','肉':'rou','丝':'si',
+        '木':'mu','须':'xu','肉':'rou','京':'jing','酱':'jiang','肉':'rou','丝':'si','锅':'guo',
+        '包':'bao','肉':'rou','包':'bao','子':'zi','饺':'jiao','子':'zi','馄':'hun','饨':'tun',
+        '面':'mian','条':'tiao','米':'mi','粉':'fen','河':'he','粉':'fen','肠':'chang','粉':'fen',
+        '炒':'chao','河':'he','粉':'fen','牛':'niu','肉':'rou','面':'mian','猪':'zhu','脚':'jiao',
+        '姜':'jiang','醋':'cu','猪':'zhu','耳':'er','盐':'yan','焗':'ju','鸡':'ji','烧':'shao',
+        '鹅':'e','卤':'lu','水':'shui','鹅':'e','咸':'xian','蛋':'dan','皮':'pi','蛋':'dan',
+        '松':'song','花':'hua','蛋':'dan','茶':'cha','叶':'ye','蛋':'dan','卤':'lu','蛋':'dan',
+        '白':'bai','煮':'zhu','蛋':'dan','煎':'jian','蛋':'dan','蒸':'zheng','蛋':'dan','鸡':'ji',
+        '蛋':'dan','汤':'tang','番':'fan','茄':'qie','蛋':'dan','汤':'tang','紫':'zi','菜':'cai',
+        '蛋':'dan','花':'hua','汤':'tang','酸':'suan','辣':'la','汤':'tang','胡':'hu','辣':'la',
+        '汤':'tang','玉':'yu','米':'mi','浓':'nong','汤':'tang','奶':'nai','油':'you','蘑':'mo',
+        '菇':'gu','汤':'tang','冬':'dong','瓜':'gua','汤':'tang','莲':'lian','藕':'ou','汤':'tang',
+        '山':'shan','药':'yao','排':'pai','骨':'gu','汤':'tang','老':'lao','火':'huo','靓':'liang',
+        '汤':'tang','白':'bai','果':'guo','腐':'fu','竹':'zhu','糖':'tang','水':'shui','豆':'dou',
+        '沙':'sha','冰':'bing','绿':'lv','豆':'dou','沙':'sha','红':'hong','豆':'dou','沙':'sha',
+        '芝':'zhi','麻':'ma','糊':'hu','核':'he','桃':'tao','糊':'hu','花':'hua','生':'sheng',
+        '糊':'hu','燕':'yan','麦':'mai','粥':'zhou','小':'xiao','米':'mi','粥':'zhou','八':'ba',
+        '宝':'bao','粥':'zhou','皮':'pi','蛋':'dan','瘦':'shou','肉':'rou','粥':'zhou','及':'ji',
+        '第':'di','粥':'zhou','艇':'ting','子':'zi','粥':'zhou','云':'yun','吞':'tun','面':'mian',
+        '叉':'cha','烧':'shao','饭':'fan','烧':'shao','鹅':'e','饭':'fan','咸':'xian','鱼':'yu',
+        '肉':'rou','饼':'bing','腊':'la','味':'wei','煲':'bao','仔':'zai','饭':'fan','窝':'wo',
+        '蛋':'dan','牛':'niu','肉':'rou','饭':'fan','猪':'zhu','排':'pai','饭':'fan','鸡':'ji',
+        '腿':'tui','饭':'fan','咖':'ka','喱':'li','鸡':'ji','饭':'fan','日':'ri','式':'shi',
+        '咖':'ka','喱':'li','饭':'fan','韩':'han','式':'shi','拌':'ban','饭':'fan','石':'shi',
+        '锅':'guo','拌':'ban','饭':'fan','蛋':'dan','包':'bao','饭':'fan','茄':'qie','汁':'zhi',
+        '豆':'dou','酱':'jiang','奶':'nai','酪':'lao','酸':'suan','奶':'nai','纯':'chun',
+        '牛':'niu','奶':'nai','脱':'tuo','脂':'zhi','奶':'nai','低':'di','脂':'zhi','奶':'nai',
+        '豆':'dou','奶':'nai','燕':'yan','麦':'mai','奶':'nai','杏':'xing','仁':'ren','奶':'nai',
+        '榛':'zhen','果':'guo','奶':'nai','开':'kai','心':'xin','果':'guo','腰':'yao','果':'guo',
+        '巴':'ba','旦':'dan','木':'mu','夏':'xia','威':'wei','夷':'yi','果':'guo','碧':'bi',
+        '根':'gen','果':'guo','葵':'kui','花':'hua','子':'zi','南':'nan','瓜':'gua','子':'zi',
+        '西':'xi','瓜':'gua','子':'zi','松':'song','子':'zi','莲':'lian','子':'zi','芡':'qian',
+        '实':'shi','百':'bai','合':'he','银':'yin','杏':'xing','红':'hong','枣':'zao','黑':'hei',
+        '枣':'zao','柿':'shi','饼':'bing','葡':'pu','萄':'tao','干':'gan','蔓':'man','越':'yue',
+        '莓':'mei','干':'gan','蓝':'lan','莓':'mei','干':'gan','酸':'suan','梅':'mei','干':'gan',
+        '话':'hua','梅':'mei','陈':'chen','皮':'pi','甘':'gan','蔗':'zhe','汁':'zhi','椰':'ye',
+        '汁':'zhi','椰':'ye','肉':'rou','椰':'ye','蓉':'rong','椰':'ye','糖':'tang','麦':'mai',
+        '芽':'ya','糖':'tang','蜂':'feng','蜜':'mi','果':'guo','酱':'jiang','草':'cao','莓':'mei',
+        '酱':'jiang','蓝':'lan','莓':'mei','酱':'jiang','苹':'ping','果':'guo','酱':'jiang',
+        '杏':'xing','仁':'ren','酱':'jiang','花':'hua','生':'sheng','酱':'jiang','芝':'zhi',
+        '麻':'ma','酱':'jiang','巧':'qiao','克':'ke','力':'li','白':'bai','巧':'qiao','克':'ke',
+        '力':'li','黑':'hei','巧':'qiao','克':'ke','力':'li','牛':'niu','轧':'ya','糖':'tang',
+        '棉':'mian','花':'hua','糖':'tang','薄':'bo','荷':'he','糖':'tang','冰':'bing','糖':'tang',
+        '白':'bai','砂':'sha','糖':'tang','红':'hong','糖':'tang','黑':'hei','糖':'tang','麦':'mai',
+        '丽':'li','素':'su','麦':'mai','芽':'ya','糊':'hu','玉':'yu','米':'mi','淀':'dian','粉':'fen',
+        '土':'tu','豆':'dou','淀':'dian','粉':'fen','番':'fan','薯':'shu','淀':'dian','粉':'fen',
+        '木':'mu','薯':'shu','粉':'fen','澄':'cheng','面':'mian','粉':'fen','粘':'nian','米':'mi',
+        '粉':'fen','糯':'nuo','米':'mi','粉':'fen','高':'gao','筋':'jin','面':'mian','粉':'fen',
+        '低':'di','筋':'jin','面':'mian','粉':'fen','全':'quan','麦':'mai','面':'mian','粉':'fen',
+        '荞':'qiao','麦':'mai','面':'mian','藜':'li','麦':'mai','糙':'cao','米':'mi','白':'bai',
+        '米':'mi','香':'xiang','米':'mi','紫':'zi','米':'mi','黑':'hei','米':'mi','红':'hong',
+        '米':'mi','小':'xiao','米':'mi','大':'da','米':'mi','黄':'huang','米':'mi','高':'gao',
+        '粱':'liang','薏':'yi','仁':'ren','西':'xi','米':'mi','藕':'ou','粉':'fen','马':'ma',
+        '蹄':'ti','粉':'fen','绿':'lv','豆':'dou','红':'hong','豆':'dou','黑':'hei','豆':'dou',
+        '黄':'huang','豆':'dou','赤':'chi','小':'xiao','豆':'dou','芸':'yun','豆':'dou','豌':'wan',
+        '豆':'dou','蚕':'can','豆':'dou','鹰':'ying','嘴':'zui','豆':'dou','扁':'bian','豆':'dou',
+        '毛':'mao','豆':'dou','豆':'dou','芽':'ya','绿':'lv','豆':'dou','芽':'ya','黄':'huang',
+        '豆':'dou','芽':'ya','豌':'wan','豆':'dou','尖':'jian','豆':'dou','苗':'miao','香':'xiang',
+        '椿':'chun','芽':'ya','竹':'zhu','笋':'sun','春':'chun','笋':'sun','冬':'dong','笋':'sun',
+        '冬':'dong','菇':'gu','香':'xiang','菇':'gu','金':'jin','针':'zhen','菇':'gu','杏':'xing',
+        '鲍':'bao','菇':'gu','茶':'cha','树':'shu','菇':'gu','猴':'hou','头':'tou','菇':'gu',
+        '草':'cao','菇':'gu','平':'ping','菇':'gu','木':'mu','耳':'er','银':'yin','耳':'er',
+        '黑':'hei','木':'mu','耳':'er','白':'bai','木':'mu','耳':'er','百':'bai','合':'he',
+        '莲':'lian','子':'zi','莲':'lian','藕':'ou','山':'shan','药':'yao','土':'tu','茯':'fu',
+        '苓':'ling','白':'bai','萝':'luo','卜':'bo','胡':'hu','萝':'luo','卜':'bo','心':'xin',
+        '里':'li','美':'mei','红':'hong','萝':'luo','卜':'bo','樱':'ying','桃':'tao','萝':'luo',
+        '卜':'bo','水':'shui','萝':'luo','卜':'bo','芥':'jie','蓝':'lan','芥':'jie','菜':'cai',
+        '苦':'ku','瓜':'gua','丝':'si','瓜':'gua','冬':'dong','瓜':'gua','南':'nan','瓜':'gua',
+        '佛':'fo','手':'shou','瓜':'gua','节':'jie','瓜':'gua','青':'qing','瓜':'gua','茄':'qie',
+        '子':'zi','秋':'qiu','葵':'kui','芦':'lu','笋':'sun','莴':'wo','笋':'sun','莴':'wo',
+        '笋':'sun','叶':'ye','生':'sheng','菜':'cai','油':'you','麦':'mai','菜':'cai','奶':'nai',
+        '白':'bai','菜':'cai','大':'da','白':'bai','菜':'cai','小':'xiao','白':'bai','菜':'cai',
+        '圆':'yuan','白':'bai','菜':'cai','娃娃':'wawa','菜':'cai','韭':'jiu','菜':'cai','韭':'jiu',
+        '黄':'huang','韭':'jiu','菜':'cai','花':'hua','蒜':'suan','苗':'miao','蒜':'suan','苔':'tai',
+        '蒜':'suan','毫':'hao','洋':'yang','葱':'cong','大':'da','葱':'cong','小':'xiao','葱':'cong',
+        '香':'xiang','葱':'cong','韭':'jiu','菜':'cai','苔':'tai','芫':'yan','荽':'sui','芹':'qin',
+        '菜':'cai','水':'shui','芹':'qin','菜':'cai','西':'xi','芹':'qin','香':'xiang','菜':'cai',
+        '紫':'zi','苏':'su','薄':'bo','荷':'he','九':'jiu','层':'ceng','塔':'ta','罗':'luo',
+        '勒':'le','迷':'mi','迭':'die','香':'xiang','百':'bai','里':'li','香':'xiang','鼠':'shu',
+        '尾':'wei','草':'cao','茴':'hui','香':'xiang','八':'ba','角':'jiao','茴':'hui','香':'xiang',
+        '桂':'gui','皮':'pi','丁':'ding','香':'xiang','豆':'dou','蔻':'kou','肉':'rou','豆':'dou',
+        '蔻':'kou','草':'cao','果':'guo','砂':'sha','仁':'ren','陈':'chen','皮':'pi','花':'hua',
+        '椒':'jiao','麻':'ma','椒':'jiao','胡':'hu','椒':'jiao','白':'bai','胡':'hu','椒':'jiao',
+        '绿':'lv','胡':'hu','椒':'jiao','红':'hong','胡':'hu','椒':'jiao','黄':'huang','胡':'hu',
+        '椒':'jiao','黑':'hei','胡':'hu','椒':'jiao','辣':'la','椒':'jiao','粉':'fen','孜':'zi',
+        '然':'ran','茴':'hui','香':'xiang','粉':'fen','五':'wu','香':'xiang','粉':'fen','十':'shi',
+        '三':'san','香':'xiang','七':'qi','味':'wei','粉':'fen','咖':'ka','喱':'li','粉':'fen',
+        '芥':'jie','末':'mo','芥':'jie','辣':'la','酱':'jiang','番':'fan','茄':'qie','酱':'jiang',
+        '沙':'sha','司':'si','蛋':'dan','黄':'huang','酱':'jiang','甜':'tian','面':'mian','酱':'jiang',
+        '豆':'dou','瓣':'ban','酱':'jiang','蚝':'hao','油':'you','鱼':'yu','露':'lu','蒸':'zheng',
+        '鱼':'yu','豉':'chi','油':'you','生':'sheng','抽':'chou','老':'lao','抽':'chou','醋':'cu',
+        '白':'bai','醋':'cu','陈':'chen','醋':'cu','香':'xiang','醋':'cu','米':'mi','醋':'cu',
+        '料':'liao','酒':'jiu','黄':'huang','酒':'jiu','白':'bai','酒':'jiu','米':'mi','酒':'jiu',
+        '红':'hong','酒':'jiu','白':'bai','葡':'pu','萄':'tao','酒':'jiu','啤':'pi','酒':'jiu',
+        '威':'wei','士':'shi','忌':'ji','伏':'fu','特':'te','加':'jia','金':'jin','酒':'jiu',
+        '朗':'lang','姆':'mu','酒':'jiu','龙':'long','舌':'she','兰':'lan','威':'wei','士':'shi',
+        '忌':'ji','清':'qing','酒':'jiu','梅':'mei','酒':'jiu','味林':'weilin','糟':'zao',
+        '卤':'lu','味':'wei','料':'liao','八':'ba','角':'jiao','桂':'gui','皮':'pi','香':'xiang',
+        '叶':'ye','豆':'dou','蔻':'kou','草':'cao','果':'guo','丁':'ding','香':'xiang','砂':'sha',
+        '仁':'ren','甘':'gan','草':'cao','陈':'chen','皮':'pi','山楂':'shanzha','大':'da',
+        '茴':'hui','香':'xiang','小':'xiao','茴':'hui','香':'xiang'
+    };
+
+    function getCustomPinyin(name) {
+        let abbr = '', full = '';
+        for (const ch of name) {
+            if (CHAR_PINYIN[ch]) {
+                const py = CHAR_PINYIN[ch];
+                abbr += py[0];
+                full += py;
+            } else if (/[a-zA-Z0-9]/.test(ch)) {
+                abbr += ch;
+                full += ch;
+            }
+        }
+        return { abbr, full };
+    }
+
     // ============================================================
     //  状态管理（按用户隔离）— 与V8一致
     // ============================================================
@@ -1392,7 +1625,7 @@
         if (!user) { detail.innerHTML = '请选择用户'; return; }
         const latest = getLatestWeight(user.id);
         const goalMap = { cut: '减脂', bulk: '增肌', maintain: '维持' };
-        const actMap = { 0: '0次', 1: '1次', 2: '2次', 3: '3次', 4: '4次', 5: '5次', 6: '6次', 7: '7次+' };
+        const actMap = { 0: '0次', 1: '1~2次', 2: '1~2次', 3: '3~4次', 4: '3~4次', 5: '5~6次', 6: '5~6次', 7: '7次+' };
         let weightGap = '-', weightGapClass = '';
         if (user.targetWeight && latest) { const gap = latest.weight - user.targetWeight; weightGap = gap.toFixed(1) + '公斤'; weightGapClass = gap > 0 ? 'gap-bad' : (gap < -0.5 ? 'gap-good' : ''); }
         let bfGap = '-', bfGapClass = '';
@@ -1421,7 +1654,7 @@
         } else if (rec.needType === 'surplus' && rec.muscleToGain > 0) {
             targetAnalysis = `<div style="font-size:12px;color:var(--text-secondary);margin-top:4px;">需要增加肌肉：${rec.muscleToGain.toFixed(1)} 公斤${rec.fatToLose > 0 ? ` · 需要减掉脂肪：${rec.fatToLose.toFixed(1)} 公斤` : ''}</div>`;
         }
-        el.innerHTML = `<div style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;">每周锻炼 ${user.activity} 次 · 活动系数 ${rec.activityFactor.toFixed(2)}</div><div class="advice-grid"><div class="macro-box"><div class="num" style="color:var(--primary);">${rec.targetCal}</div><div class="label">每日目标热量</div><div class="sub">${goalLabel}</div></div><div class="macro-box"><div class="num" style="color:${rec.dailyNeed > 0 ? (rec.needType === 'deficit' ? 'var(--primary)' : '#DC2626') : 'var(--text-secondary)'};">${rec.dailyNeed > 0 ? (rec.needType === 'deficit' ? '⬇' : '⬆') + rec.dailyNeed : '0'}</div><div class="label">${rec.needType === 'deficit' ? '每日缺口' : rec.needType === 'surplus' ? '每日盈余' : '平衡'}</div><div class="sub">总需求 ${rec.totalNeed} 大卡</div></div></div>${targetAnalysis}<div class="text-secondary" style="font-size:10px;margin-top:4px;">基础代谢 ${rec.bmr} 大卡 · 每日总消耗 ${rec.tdee} 大卡 · ${rec.days} 天</div>`;
+        el.innerHTML = `<div style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;">每周锻炼 ${actMap[user.activity] || user.activity} 次 · 活动系数 ${rec.activityFactor.toFixed(2)}</div><div class="advice-grid"><div class="macro-box"><div class="num" style="color:var(--primary);">${rec.targetCal}</div><div class="label">每日目标热量</div><div class="sub">${goalLabel}</div></div><div class="macro-box"><div class="num" style="color:${rec.dailyNeed > 0 ? (rec.needType === 'deficit' ? 'var(--primary)' : '#DC2626') : 'var(--text-secondary)'};">${rec.dailyNeed > 0 ? (rec.needType === 'deficit' ? '⬇' : '⬆') + rec.dailyNeed : '0'}</div><div class="label">${rec.needType === 'deficit' ? '每日缺口' : rec.needType === 'surplus' ? '每日盈余' : '平衡'}</div><div class="sub">总需求 ${rec.totalNeed} 大卡</div></div></div>${targetAnalysis}<div class="text-secondary" style="font-size:10px;margin-top:4px;">基础代谢 ${rec.bmr} 大卡 · 每日总消耗 ${rec.tdee} 大卡 · ${rec.days} 天</div>`;
     }
 
     // ============================================================
@@ -1586,11 +1819,29 @@
                 updateSuggestDirection(mealKey, suggestBox);
             });
             searchInput.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') {
-                    const first = suggestBox.querySelector('.ms-item');
-                    if (first) first.click();
+                const items = suggestBox.querySelectorAll('.ms-item');
+                if (items.length === 0) return;
+                let curIdx = -1;
+                items.forEach((it, i) => { if (it.classList.contains('ms-selected')) curIdx = i; });
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    if (curIdx >= 0) items[curIdx].classList.remove('ms-selected');
+                    const next = (curIdx + 1) % items.length;
+                    items[next].classList.add('ms-selected');
+                    items[next].scrollIntoView({ block: 'nearest' });
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    if (curIdx >= 0) items[curIdx].classList.remove('ms-selected');
+                    const prev = (curIdx - 1 + items.length) % items.length;
+                    items[prev].classList.add('ms-selected');
+                    items[prev].scrollIntoView({ block: 'nearest' });
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const sel = curIdx >= 0 ? items[curIdx] : items[0];
+                    if (sel) sel.click();
+                } else if (e.key === 'Escape') {
+                    suggestBox.classList.remove('active'); this.blur();
                 }
-                if (e.key === 'Escape') { suggestBox.classList.remove('active'); this.blur(); }
             });
         }
         // 点击外部关闭搜索建议并恢复➕按钮
@@ -1640,7 +1891,7 @@
     // 餐次内搜索建议渲染
     function renderMealAddSuggestions(query, mealKey, suggestBox) {
         const db = getFullFoodDB();
-        const matched = db.filter(f => f.name.includes(query) || f.name.toLowerCase().includes(query.toLowerCase()));
+        const matched = db.filter(f => f.name.includes(query) || f.name.toLowerCase().includes(query.toLowerCase()) || matchPinyin(query, f.name));
         let html = '';
         matched.forEach(f => {
             const unitHint = f.defaultUnit ? ` (${f.defaultUnit})` : '';
@@ -1941,7 +2192,7 @@
         document.getElementById('chartZoomModal').classList.add('active');
         setTimeout(() => {
             const user = getCurrentUser();
-            const days = parseInt(document.getElementById('weightDays').value) || 7;
+            const days = parseInt(document.getElementById('weightDays').value) || 14;
             const dates = [];
             for (let i = days - 1; i >= 0; i--) { dates.push(getDateDaysAgo(i)); }
             const records = [];
@@ -1961,7 +2212,7 @@
 
     function renderWeightChart() {
         const user = getCurrentUser();
-        const days = parseInt(document.getElementById('weightDays').value) || 7;
+        const days = parseInt(document.getElementById('weightDays').value) || 14;
         const dates = [];
         for (let i = days - 1; i >= 0; i--) { dates.push(getDateDaysAgo(i)); }
         const records = [];
@@ -2213,7 +2464,7 @@
             const avgProtein = count > 0 ? Math.round(totalProtein / count) : 0;
             const avgCarbs = count > 0 ? Math.round(totalCarbs / count) : 0;
             const avgFat = count > 0 ? Math.round(totalFat / count) : 0;
-            html += `<tr style="font-weight:600;background:var(--primary-bg);"><td>📊 平均</td><td>${avgCal}</td><td>-</td><td>-</td><td>${avgCarbs}</td><td>${avgProtein}</td><td>${avgFat}</td></tr>`;
+            html += `<tr style="font-weight:600;background:#F3F4F6;"><td>📊 平均</td><td>${avgCal}</td><td>-</td><td>-</td><td>${avgCarbs}</td><td>${avgProtein}</td><td>${avgFat}</td></tr>`;
         } else { html = '<tr><td colspan="7" class="text-secondary text-center">所选日期无数据</td></tr>'; }
         tbody.innerHTML = html;
 
@@ -2280,8 +2531,8 @@
         let start = document.getElementById('weightHistStart').value;
         let end = document.getElementById('weightHistEnd').value;
         // 默认跟随热量统计的日期范围
-        if (!start) { start = document.getElementById('histStart').value || getDateDaysAgo(6); }
-        if (!end) { end = document.getElementById('histEnd').value || getToday(); }
+        if (!start) { start = getDateDaysAgo(13); }
+        if (!end) { end = getToday(); }
         document.getElementById('weightHistStart').value = start;
         document.getElementById('weightHistEnd').value = end;
 
@@ -2290,9 +2541,26 @@
         if (records.length === 0) { tbody.innerHTML = '<tr><td colspan="4" class="text-secondary text-center">所选日期无体重记录</td></tr>'; return; }
         let html = '';
         records.forEach(r => {
-            html += `<tr><td>${r.date}</td><td>${r.weight}</td><td>${r.bodyfat || '—'}</td><td>${timeMap[r.time] || r.time || '—'}</td></tr>`;
+            html += `<tr class="weight-row" data-date="${r.date}" data-time="${r.time || 'fasting'}" data-weight="${r.weight}" data-bodyfat="${r.bodyfat || ''}"><td>${r.date}</td><td>${r.weight}</td><td>${r.bodyfat || '—'}</td><td>${timeMap[r.time] || r.time || '—'}</td></tr>`;
         });
         tbody.innerHTML = html;
+        // 双击编辑体重记录
+        tbody.querySelectorAll('.weight-row').forEach(row => {
+            row.addEventListener('dblclick', function() {
+                const date = this.dataset.date;
+                const time = this.dataset.time;
+                const weight = this.dataset.weight;
+                const bodyfat = this.dataset.bodyfat;
+                // 填入记录表单
+                document.getElementById('weightDate').value = date;
+                document.getElementById('weightVal').value = weight;
+                document.getElementById('bodyfatVal').value = bodyfat;
+                document.getElementById('weightTime').value = time;
+                document.getElementById('weightVal').focus();
+                document.getElementById('weightVal').select();
+                showToast('✏️ 已载入记录，修改后点记录按钮保存');
+            });
+        });
     }
 
     // ============================================================
@@ -2958,7 +3226,7 @@
                     // 再从云端加载
                     await loadFromCloud();
                     showMainApp();
-                    console.log('🥗 智能饮食规划器 V2.8 已加载（云端模式）');
+                    console.log('🥗 智能饮食规划器 V3.0 已加载（云端模式）');
                     return;
                 }
             } catch (e) {
@@ -2968,7 +3236,7 @@
         // 未登录，显示登录表单，隐藏 loading
         document.getElementById('authInitLoading').style.display = 'none';
         document.getElementById('authFormBox').style.display = 'block';
-        console.log('🥗 智能饮食规划器 V2.8 已加载（待登录）');
+        console.log('🥗 智能饮食规划器 V3.0 已加载（待登录）');
     });
 
     function bindAllEvents() {
@@ -3061,20 +3329,16 @@
             this.textContent = histSortOrder === 'asc' ? '📅 降序' : '📅 升序';
             renderHistory();
         });
-        document.getElementById('histResetBtn').addEventListener('click', function() {
-            const end = getToday(); const start = getDateDaysAgo(6);
-            document.getElementById('histStart').value = start;
-            document.getElementById('histEnd').value = end;
-            renderHistory();
-        });
+
 
         // 历史体重体脂表查询
         document.getElementById('weightHistRefreshBtn').addEventListener('click', renderWeightHistory);
+        document.getElementById('weightHistResetBtn').addEventListener('click', function() { document.getElementById('weightHistStart').value = getDateDaysAgo(13); document.getElementById('weightHistEnd').value = getToday(); renderWeightHistory(); });
 
         let resizeTimer;
         window.addEventListener('resize', function() { clearTimeout(resizeTimer); resizeTimer = setTimeout(renderWeightChart, 200); });
 
-        console.log('🥗 智能饮食规划器 V2.8 事件绑定完成');
+        console.log('🥗 智能饮食规划器 V3.0 事件绑定完成');
     }
 
     // 全局错误捕获
