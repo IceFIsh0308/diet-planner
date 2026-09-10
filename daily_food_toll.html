@@ -372,6 +372,7 @@
             <div class="meal-header-row">
                 <span class="label">🍽️ 今日饮食</span>
                 <input type="date" class="date-picker" id="mealDatePicker" />
+                <button class="btn btn-outline btn-sm" id="backToTodayBtn" style="display:none;font-size:12px;padding:3px 10px;">← 回到今日</button>
                 <span class="title-right">
                     <div class="import-group">
                         <button class="btn btn-outline btn-sm" id="importDietBtn">📥 导入 ▾</button>
@@ -562,6 +563,25 @@
         <div class="modal-actions">
             <button class="btn-cancel" id="foodEditCancel">取消</button>
             <button class="btn-confirm" id="foodEditConfirm">保存</button>
+        </div>
+    </div>
+</div>
+
+<!-- 体重编辑弹窗 -->
+<div class="modal-overlay" id="weightEditModal">
+    <div class="modal-box">
+        <h3>✏️ 编辑体重记录</h3>
+        <div class="row">
+            <div class="field"><label>日期</label><input type="date" id="editWeightDate" readonly /></div>
+            <div class="field"><label>时段</label><select id="editWeightTime"><option value="fasting">空腹</option><option value="morning">早晨</option><option value="noon">中午</option><option value="evening">晚上</option></select></div>
+        </div>
+        <div class="row">
+            <div class="field"><label>体重(kg)</label><input type="number" id="editWeightVal" step="0.1" /></div>
+            <div class="field"><label>体脂率(%)</label><input type="number" id="editBodyfatVal" step="0.1" /></div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-cancel" id="weightEditCancel">取消</button>
+            <button class="btn-confirm" id="weightEditConfirm">保存</button>
         </div>
     </div>
 </div>
@@ -2493,6 +2513,9 @@
                     updateMealTitle(today);
                     renderMeals();
                     renderAdvice();
+                    // 恢复日期选择器，隐藏回到今日
+                    document.getElementById('mealDatePicker').style.display = '';
+                    document.getElementById('backToTodayBtn').style.display = 'none';
                 } else {
                     // 选中新行
                     if (selectedHistRow) selectedHistRow.classList.remove('selected');
@@ -2504,6 +2527,9 @@
                     updateMealTitle(date);
                     renderMeals();
                     renderAdvice();
+                    // 隐藏日期选择器，显示回到今日
+                    document.getElementById('mealDatePicker').style.display = 'none';
+                    document.getElementById('backToTodayBtn').style.display = '';
                 }
             });
         });
@@ -2541,7 +2567,7 @@
         if (records.length === 0) { tbody.innerHTML = '<tr><td colspan="4" class="text-secondary text-center">所选日期无体重记录</td></tr>'; return; }
         let html = '';
         records.forEach(r => {
-            html += `<tr class="weight-row" data-date="${r.date}" data-time="${r.time || 'fasting'}" data-weight="${r.weight}" data-bodyfat="${r.bodyfat || ''}"><td>${r.date}</td><td>${r.weight}</td><td>${r.bodyfat || '—'}</td><td>${timeMap[r.time] || r.time || '—'}</td></tr>`;
+            html += `<tr class="weight-row" data-date="${r.date}" data-time="${r.time || 'fasting'}" data-weight="${r.weight}" data-bodyfat="${r.bodyfat || ''}" style="cursor:pointer;"><td>${r.date}</td><td>${r.weight}</td><td>${r.bodyfat || '—'}</td><td>${timeMap[r.time] || r.time || '—'}</td></tr>`;
         });
         tbody.innerHTML = html;
         // 双击编辑体重记录
@@ -2551,14 +2577,13 @@
                 const time = this.dataset.time;
                 const weight = this.dataset.weight;
                 const bodyfat = this.dataset.bodyfat;
-                // 填入记录表单
-                document.getElementById('weightDate').value = date;
-                document.getElementById('weightVal').value = weight;
-                document.getElementById('bodyfatVal').value = bodyfat;
-                document.getElementById('weightTime').value = time;
-                document.getElementById('weightVal').focus();
-                document.getElementById('weightVal').select();
-                showToast('✏️ 已载入记录，修改后点记录按钮保存');
+                document.getElementById('editWeightDate').value = date;
+                document.getElementById('editWeightTime').value = time;
+                document.getElementById('editWeightVal').value = weight;
+                document.getElementById('editBodyfatVal').value = bodyfat;
+                editingWeightDate = date;
+                editingWeightTime = time;
+                document.getElementById('weightEditModal').classList.add('active');
             });
         });
     }
@@ -3138,6 +3163,14 @@
             // 云端同步
             if (isOnlineMode) await saveProfileToCloud(user);
             showToast('✅ 已更新');
+        } else {
+            // 没有用户时创建新用户
+            const newId = 'user_' + Date.now();
+            const newUser = { id: newId, name, gender, age, height, weight, bodyFat, goal, targetWeight, targetBodyFat, activity, days, initialWeight: weight, initialBodyFat: bodyFat };
+            users.push(newUser);
+            currentUserId = newId;
+            if (isOnlineMode) await saveProfileToCloud(newUser);
+            showToast('✅ 已创建档案');
         }
         closeUserModal(); saveAll();
         renderUserInfo(); renderAdvice(); renderMeals(); renderWeightChart(); renderHistory();
@@ -3145,6 +3178,29 @@
         const emailEl = document.getElementById('authUserEmail');
         if (emailEl) { const u = getCurrentUser(); emailEl.textContent = u ? u.name : ''; }
     }
+
+    let editingWeightDate = null, editingWeightTime = null;
+    document.getElementById('weightEditCancel').addEventListener('click', function() { document.getElementById('weightEditModal').classList.remove('active'); });
+    document.getElementById('weightEditConfirm').addEventListener('click', async function() {
+        const user = getCurrentUser(); if (!user) return;
+        const weight = parseFloat(document.getElementById('editWeightVal').value);
+        const bodyfat = parseFloat(document.getElementById('editBodyfatVal').value);
+        const time = document.getElementById('editWeightTime').value;
+        if (!weight || weight <= 0) { showToast('请输入有效体重'); return; }
+        const records = weightRecords[user.id] || [];
+        const existing = records.find(r => r.date === editingWeightDate && r.time === editingWeightTime);
+        if (existing) {
+            existing.weight = weight;
+            existing.bodyfat = bodyfat || null;
+            existing.time = time;
+            if (isOnlineMode && existing._dbId) {
+                try { await supabaseClient.from('weight_records').update({ weight, bodyfat: bodyfat || null, time }).eq('id', existing._dbId); } catch(e) { console.error('云端更新体重失败:', e); }
+            }
+        }
+        saveAll(); renderWeightChart(); renderUserInfo(); renderAdvice(); renderMeals(); renderWeightHistory();
+        document.getElementById('weightEditModal').classList.remove('active');
+        showToast('✅ 体重记录已更新');
+    });
 
     // ============================================================
     //  体重记录 — 与V8一致
@@ -3245,7 +3301,8 @@
         document.getElementById('editProfileBtn').addEventListener('click', function() { openUserModal(null); });
 
         // 日期选择器
-        document.getElementById('mealDatePicker').addEventListener('change', function() { selectedDate = this.value || getToday(); updateMealTitle(selectedDate); renderMeals(); renderAdvice(); if (selectedHistRow) { selectedHistRow.classList.remove('selected'); selectedHistRow = null; } });
+        document.getElementById('mealDatePicker').addEventListener('change', function() { selectedDate = this.value || getToday(); updateMealTitle(selectedDate); renderMeals(); renderAdvice(); if (selectedHistRow) { selectedHistRow.classList.remove('selected'); selectedHistRow = null; document.getElementById('mealDatePicker').style.display = ''; document.getElementById('backToTodayBtn').style.display = 'none'; } });
+        document.getElementById('backToTodayBtn').addEventListener('click', function() { const today = getToday(); document.getElementById('mealDatePicker').value = today; selectedDate = today; updateMealTitle(today); renderMeals(); renderAdvice(); if (selectedHistRow) { selectedHistRow.classList.remove('selected'); selectedHistRow = null; } document.getElementById('mealDatePicker').style.display = ''; this.style.display = 'none'; });
 
         // 餐次切换
         let mealKeyHandler = null;
